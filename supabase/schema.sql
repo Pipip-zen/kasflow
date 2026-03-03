@@ -43,5 +43,6 @@ CREATE TABLE payments (
     status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'paid')),
     mayar_payment_id TEXT,
     payment_token TEXT UNIQUE,
+    payment_url TEXT,
     paid_at TIMESTAMP WITH TIME ZONE
 );

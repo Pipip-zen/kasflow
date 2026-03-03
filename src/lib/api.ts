@@ -1,6 +1,7 @@
 import { supabase } from './supabase';
 import { v4 as uuidv4 } from 'uuid';
 import { sendWhatsApp } from './fonnte';
+import { createPaymentLink } from './mayar';
 export interface Group {
     id: string;
     nama: string;
@@ -35,6 +36,7 @@ export interface Payment {
     status: 'pending' | 'paid';
     mayar_payment_id: string | null;
     payment_token: string | null;
+    payment_url: string | null;
     paid_at: string | null;
 }
 
@@ -377,18 +379,33 @@ export const api = {
         if (payments && payments.length > 0) {
             for (const p of payments) {
                 let paymentToken = p.payment_token;
+                const namaMember = (p.members as any)?.nama || 'Anggota';
+                const namaGroup = (bill.groups as any)?.nama || 'Grup';
 
                 if (!paymentToken) {
                     paymentToken = uuidv4();
+
+                    // Generate Mayar Link
+                    const mayarRes = await createPaymentLink({
+                        title: bill.judul,
+                        amount: bill.nominal,
+                        customer_name: namaMember,
+                        payment_token: paymentToken
+                    });
+
+                    const updatePayload: any = { payment_token: paymentToken };
+                    if (mayarRes) {
+                        updatePayload.payment_url = mayarRes.payment_url;
+                        updatePayload.mayar_payment_id = mayarRes.mayar_payment_id;
+                    }
+
                     await supabase
                         .from('payments')
-                        .update({ payment_token: paymentToken })
+                        .update(updatePayload)
                         .eq('id', p.id);
                 }
 
                 const waNumber = (p.members as any)?.nomor_wa;
-                const namaMember = (p.members as any)?.nama || 'Anggota';
-                const namaGroup = (bill.groups as any)?.nama || 'Grup';
 
                 if (waNumber) {
                     const nominalRp = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(bill.nominal);
@@ -455,5 +472,23 @@ export const api = {
         }
 
         return { success: true, total_sent: totalSent };
+    },
+
+    getPaymentByToken: async (token: string) => {
+        const { data, error } = await supabase
+            .from('payments')
+            .select(`
+                *,
+                members (nama),
+                bills (judul, nominal, deadline, groups (nama))
+            `)
+            .eq('payment_token', token)
+            .single();
+
+        if (error || !data) throw error || new Error("Token tidak valid");
+        return data as (Payment & {
+            members: { nama: string },
+            bills: { judul: string, nominal: number, deadline: string, groups: { nama: string } }
+        });
     }
 };

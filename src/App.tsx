@@ -9,6 +9,7 @@ import Groups from './pages/Groups';
 import GroupDetail from './pages/GroupDetail';
 import Bills from './pages/Bills';
 import BillDetail from './pages/BillDetail';
+import PublicPayment from './pages/PublicPayment';
 import { Toaster } from "@/components/ui/sonner"
 
 function App() {
@@ -20,6 +21,7 @@ function App() {
           {/* Public Routes */}
           <Route path="/" element={<Landing />} />
           <Route path="/auth" element={<Auth />} />
+          <Route path="/pay/:token" element={<PublicPayment />} />
 
           {/* Protected Routes directly connected to Layout */}
           <Route element={<ProtectedRoute />}>

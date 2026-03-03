@@ -18,7 +18,9 @@ export const sendWhatsApp = async (nomor: string, pesan: string): Promise<{ succ
         formData.append('message', pesan);
         // You could also add 'delay', 'typing', etc., based on Fonnte API docs
 
-        const response = await fetch('https://api.fonnte.com/send', {
+        const endpoint = import.meta.env.DEV ? '/api/fonnte/send' : 'https://api.fonnte.com/send';
+
+        const response = await fetch(endpoint, {
             method: 'POST',
             headers: {
                 'Authorization': apiKey, // Fonnte uses Authorization header with raw token

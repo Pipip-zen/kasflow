@@ -11,4 +11,18 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  server: {
+    proxy: {
+      '/api/fonnte': {
+        target: 'https://api.fonnte.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/fonnte/, ''),
+      },
+      '/api/mayar': {
+        target: 'https://api.mayar.id',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/mayar/, ''),
+      }
+    }
+  }
 })
