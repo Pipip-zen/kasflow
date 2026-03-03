@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
-
+import { v4 as uuidv4 } from 'uuid';
+import { sendWhatsApp } from './fonnte';
 export interface Group {
     id: string;
     nama: string;
@@ -350,5 +351,109 @@ export const api = {
 
         if (error) throw error;
         return data as (Payment & { members: Member })[];
+    },
+
+    activateBill: async (billId: string) => {
+        const { data: bill, error: billError } = await supabase
+            .from('bills')
+            .select('*, groups(nama)')
+            .eq('id', billId)
+            .single();
+
+        if (billError || !bill) throw billError || new Error("Bill not found");
+
+        const { data: payments, error: payError } = await supabase
+            .from('payments')
+            .select('*, members(nama, nomor_wa)')
+            .eq('bill_id', billId)
+            .eq('status', 'pending');
+
+        if (payError) throw payError;
+
+        let totalSent = 0;
+        const failedList: string[] = [];
+        const appUrl = import.meta.env.VITE_APP_URL || window.location.origin;
+
+        if (payments && payments.length > 0) {
+            for (const p of payments) {
+                let paymentToken = p.payment_token;
+
+                if (!paymentToken) {
+                    paymentToken = uuidv4();
+                    await supabase
+                        .from('payments')
+                        .update({ payment_token: paymentToken })
+                        .eq('id', p.id);
+                }
+
+                const waNumber = (p.members as any)?.nomor_wa;
+                const namaMember = (p.members as any)?.nama || 'Anggota';
+                const namaGroup = (bill.groups as any)?.nama || 'Grup';
+
+                if (waNumber) {
+                    const nominalRp = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(bill.nominal);
+                    const deadlineStr = new Date(bill.deadline).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+                    const payLink = `${appUrl}/pay/${paymentToken}`;
+
+                    const message = `Halo ${namaMember} 👋\nAda tagihan *${bill.judul}* dari *${namaGroup}*\n\n💰 Nominal: ${nominalRp}\n📅 Deadline: ${deadlineStr}\n\nBayar sekarang di sini:\n${payLink}\n\nTerima kasih!`;
+
+                    const result = await sendWhatsApp(waNumber, message);
+                    if (result.success) {
+                        totalSent++;
+                    } else {
+                        failedList.push(namaMember);
+                    }
+                } else {
+                    failedList.push(`${namaMember} (No WA)`);
+                }
+            }
+        }
+
+        await supabase.from('bills').update({ status: 'active' }).eq('id', billId);
+        return { success: true, total_sent: totalSent, failed: failedList };
+    },
+
+    remindBill: async (billId: string) => {
+        const { data: bill, error: billError } = await supabase
+            .from('bills')
+            .select('*, groups(nama)')
+            .eq('id', billId)
+            .single();
+
+        if (billError || !bill) throw billError || new Error("Bill not found");
+
+        const { data: payments, error: payError } = await supabase
+            .from('payments')
+            .select('*, members(nama, nomor_wa)')
+            .eq('bill_id', billId)
+            .eq('status', 'pending');
+
+        if (payError) throw payError;
+
+        let totalSent = 0;
+        const appUrl = import.meta.env.VITE_APP_URL || window.location.origin;
+
+        if (payments && payments.length > 0) {
+            for (const p of payments) {
+                if (!p.payment_token) continue;
+
+                const waNumber = (p.members as any)?.nomor_wa;
+                const namaMember = (p.members as any)?.nama || 'Anggota';
+                const namaGroup = (bill.groups as any)?.nama || 'Grup';
+
+                if (waNumber) {
+                    const nominalRp = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(bill.nominal);
+                    const deadlineStr = new Date(bill.deadline).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+                    const payLink = `${appUrl}/pay/${p.payment_token}`;
+
+                    const message = `[REMINDER]\nHalo ${namaMember} 👋\nMengingatkan tagihan *${bill.judul}* dari *${namaGroup}* yang belum lunas.\n\n💰 Nominal: ${nominalRp}\n📅 Deadline: ${deadlineStr}\n\nBayar sekarang di sini:\n${payLink}\n\nTerima kasih!`;
+
+                    const result = await sendWhatsApp(waNumber, message);
+                    if (result.success) totalSent++;
+                }
+            }
+        }
+
+        return { success: true, total_sent: totalSent };
     }
 };

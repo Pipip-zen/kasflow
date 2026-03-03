@@ -9,11 +9,13 @@ import Groups from './pages/Groups';
 import GroupDetail from './pages/GroupDetail';
 import Bills from './pages/Bills';
 import BillDetail from './pages/BillDetail';
+import { Toaster } from "@/components/ui/sonner"
 
 function App() {
   return (
     <AuthProvider>
       <div className="min-h-screen bg-background text-foreground flex flex-col items-center selection:bg-primary selection:text-primary-foreground w-full">
+        <Toaster />
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={<Landing />} />

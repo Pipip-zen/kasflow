@@ -17,6 +17,7 @@ import {
     TableRow,
 } from "../components/ui/table"
 import { ArrowLeft, CheckCircle2, XCircle, MessageCircle, PlayCircle, StopCircle } from 'lucide-react';
+import { toast } from 'sonner';
 
 type PaymentWithMember = Payment & { members: Member };
 type BillExtended = Bill & { total_members: number, paid_count: number, progress: number };
@@ -58,15 +59,60 @@ const BillDetail: React.FC = () => {
 
         // Safety Prompts
         if (status === 'closed' && !window.confirm("Tutup tagihan ini? Anggota tidak akan bisa membayar lagi via link payment.")) return;
-        if (status === 'active' && !window.confirm("Aktifkan tagihan ini? Nanti bisa dilanjut kirim broadcast WA.")) return;
 
         setIsUpdatingStatus(true);
         try {
             await api.updateBillStatus(bill.id, status);
             setBill({ ...bill, status });
+            toast.success("Status tagihan berhasil ditutup.");
         } catch (error) {
             console.error("Failed to update status", error);
-            alert("Gagal merubah status tagihan.");
+            toast.error("Gagal merubah status tagihan.");
+        } finally {
+            setIsUpdatingStatus(false);
+        }
+    };
+
+    const handleActivateTagihan = async () => {
+        if (!bill) return;
+        if (!window.confirm("Aktifkan tagihan ini? Sistem akan mengirimkan pesan WhatsApp ke semua anggota secara otomatis.")) return;
+
+        setIsUpdatingStatus(true);
+        toast.loading("Memproses dan mengirimkan pesan WA...", { id: 'activate-bill' });
+
+        try {
+            const result = await api.activateBill(bill.id);
+            setBill({ ...bill, status: 'active' });
+
+            // Re-fetch payments to ensure tokens align locally if needed
+            const updatedPayments = await api.getBillPayments(bill.id);
+            setPayments(updatedPayments);
+
+            toast.success(`Tagihan aktif! Terkirim: ${result.total_sent} pesan WA.`, {
+                id: 'activate-bill',
+                description: result.failed.length > 0 ? `Gagal mengirim ke: ${result.failed.join(', ')}` : undefined
+            });
+        } catch (error) {
+            console.error("Failed to activate bill", error);
+            toast.error("Gagal mengaktifkan tagihan.", { id: 'activate-bill' });
+        } finally {
+            setIsUpdatingStatus(false);
+        }
+    };
+
+    const handleRemindTagihan = async () => {
+        if (!bill) return;
+        if (!window.confirm("Kirim ulang pengingat WA ke anggota yang BELUM terbayar?")) return;
+
+        setIsUpdatingStatus(true);
+        toast.loading("Mengirimkan pengingat WhatsApp...", { id: 'remind-bill' });
+
+        try {
+            const result = await api.remindBill(bill.id);
+            toast.success(`Pengingat WA berhasil terkirim ke ${result.total_sent} anggota.`, { id: 'remind-bill' });
+        } catch (error) {
+            console.error("Failed to send reminder", error);
+            toast.error("Gagal mengirimkan pengingat WhatsApp.", { id: 'remind-bill' });
         } finally {
             setIsUpdatingStatus(false);
         }
@@ -178,13 +224,13 @@ const BillDetail: React.FC = () => {
                 {/* Desktop Action Buttons */}
                 <div className="hidden md:flex gap-2">
                     {bill.status === 'draft' && (
-                        <Button onClick={() => handleUpdateStatus('active')} disabled={isUpdatingStatus} className="bg-blue-600 hover:bg-blue-700">
-                            <PlayCircle className="w-4 h-4 mr-2" /> Aktifkan Tagihan
+                        <Button onClick={handleActivateTagihan} disabled={isUpdatingStatus} className="bg-blue-600 hover:bg-blue-700">
+                            <PlayCircle className="w-4 h-4 mr-2" /> Aktifkan & Kirim WA
                         </Button>
                     )}
 
                     {(bill.status === 'active' || bill.status === 'draft') && (
-                        <Button variant="outline" className="border-green-600 text-green-700 hover:bg-green-50" onClick={() => alert("Fitur Kirim WA Otomatis akan dihubungkan di task berikutnya!")}>
+                        <Button variant="outline" className="border-green-600 text-green-700 hover:bg-green-50" onClick={handleRemindTagihan} disabled={isUpdatingStatus}>
                             <MessageCircle className="w-4 h-4 mr-2" /> Kirim Pengingat WA
                         </Button>
                     )}
@@ -251,13 +297,13 @@ const BillDetail: React.FC = () => {
             {/* Mobile Action Buttons (Sticky Bottom) */}
             <div className="md:hidden fixed bottom-0 left-0 right-0 p-4 bg-white border-t flex flex-col gap-2 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-10">
                 {bill.status === 'draft' && (
-                    <Button onClick={() => handleUpdateStatus('active')} disabled={isUpdatingStatus} className="bg-blue-600 hover:bg-blue-700 w-full">
-                        <PlayCircle className="w-4 h-4 mr-2" /> Aktifkan
+                    <Button onClick={handleActivateTagihan} disabled={isUpdatingStatus} className="bg-blue-600 hover:bg-blue-700 w-full">
+                        <PlayCircle className="w-4 h-4 mr-2" /> Aktifkan & Kirim WA
                     </Button>
                 )}
 
                 {(bill.status === 'active' || bill.status === 'draft') && (
-                    <Button variant="outline" className="w-full border-green-600 text-green-700 hover:bg-green-50" onClick={() => alert("Fitur Kirim WA Otomatis akan dihubungkan di task berikutnya!")}>
+                    <Button variant="outline" className="w-full border-green-600 text-green-700 hover:bg-green-50" onClick={handleRemindTagihan} disabled={isUpdatingStatus}>
                         <MessageCircle className="w-4 h-4 mr-2" /> Kirim Pengingat WA
                     </Button>
                 )}
