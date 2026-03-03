@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LayoutDashboard, Users, LogOut, Menu } from 'lucide-react';
+import { LayoutDashboard, Users, LogOut, Menu, Receipt } from 'lucide-react';
 import { Button } from './ui/button';
 import {
     DropdownMenu,
@@ -23,6 +23,7 @@ export const DashboardLayout: React.FC = () => {
 
     const navLinks = [
         { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+        { to: '/bills', label: 'Tagihan', icon: Receipt },
         { to: '/groups', label: 'Grup', icon: Users },
     ];
 

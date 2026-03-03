@@ -206,5 +206,149 @@ export const api = {
         );
 
         return billsWithProgress;
+    },
+
+    // --------- BILLS ---------
+    getAllBills: async (bendaharaId: string) => {
+        // get all groups managed by this bendahara
+        const { data: userGroups } = await supabase
+            .from('groups')
+            .select('id')
+            .eq('bendahara_id', bendaharaId);
+
+        const groupIds = userGroups?.map(g => g.id) || [];
+        if (groupIds.length === 0) return [];
+
+        const { data, error } = await supabase
+            .from('bills')
+            .select(`
+        *,
+        groups (nama)
+      `)
+            .in('group_id', groupIds)
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        const billsWithProgress = await Promise.all(
+            (data as any[]).map(async (bill) => {
+                const { count: totalTarget } = await supabase
+                    .from('payments')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('bill_id', bill.id);
+
+                const { count: paidCount } = await supabase
+                    .from('payments')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('bill_id', bill.id)
+                    .eq('status', 'paid');
+
+                return {
+                    ...bill,
+                    total_members: totalTarget || 0,
+                    paid_count: paidCount || 0,
+                    progress: totalTarget && totalTarget > 0 ? Math.round(((paidCount || 0) / (totalTarget || 1)) * 100) : 0
+                };
+            })
+        );
+
+        return billsWithProgress as (Bill & { total_members: number, paid_count: number, progress: number })[];
+    },
+
+    createBill: async (groupId: string, judul: string, nominal: number, deadline: string) => {
+        // 1. Insert bill as draft
+        const { data: bill, error: billError } = await supabase
+            .from('bills')
+            .insert({
+                group_id: groupId,
+                judul,
+                nominal,
+                deadline,
+                status: 'draft'
+            })
+            .select()
+            .single();
+
+        if (billError) throw billError;
+
+        // 2. Fetch all members of this group
+        const { data: members, error: memError } = await supabase
+            .from('members')
+            .select('id')
+            .eq('group_id', groupId);
+
+        if (memError) throw memError;
+
+        // 3. Cascade insert pending payments if there are members
+        if (members && members.length > 0) {
+            const paymentInserts = members.map(m => ({
+                bill_id: bill.id,
+                member_id: m.id,
+                status: 'pending'
+            }));
+
+            const { error: payError } = await supabase
+                .from('payments')
+                .insert(paymentInserts);
+
+            if (payError) throw payError;
+        }
+
+        return bill as Bill;
+    },
+
+    getBillDetail: async (billId: string) => {
+        const { data, error } = await supabase
+            .from('bills')
+            .select(`
+        *,
+        groups (nama)
+      `)
+            .eq('id', billId)
+            .single();
+
+        if (error) throw error;
+
+        // progress stats
+        const { count: totalTarget } = await supabase
+            .from('payments')
+            .select('*', { count: 'exact', head: true })
+            .eq('bill_id', billId);
+
+        const { count: paidCount } = await supabase
+            .from('payments')
+            .select('*', { count: 'exact', head: true })
+            .eq('bill_id', billId)
+            .eq('status', 'paid');
+
+        return {
+            ...(data as any),
+            total_members: totalTarget || 0,
+            paid_count: paidCount || 0,
+            progress: totalTarget && totalTarget > 0 ? Math.round(((paidCount || 0) / (totalTarget || 1)) * 100) : 0
+        } as Bill & { total_members: number, paid_count: number, progress: number };
+    },
+
+    updateBillStatus: async (billId: string, status: 'draft' | 'active' | 'closed') => {
+        const { error } = await supabase
+            .from('bills')
+            .update({ status })
+            .eq('id', billId);
+
+        if (error) throw error;
+    },
+
+    getBillPayments: async (billId: string) => {
+        // Get payments joined with member info
+        const { data, error } = await supabase
+            .from('payments')
+            .select(`
+        *,
+        members (id, nama, nomor_wa)
+      `)
+            .eq('bill_id', billId);
+
+        if (error) throw error;
+        return data as (Payment & { members: Member })[];
     }
 };

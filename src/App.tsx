@@ -7,6 +7,8 @@ import Auth from './pages/Auth';
 import Dashboard from './pages/Dashboard';
 import Groups from './pages/Groups';
 import GroupDetail from './pages/GroupDetail';
+import Bills from './pages/Bills';
+import BillDetail from './pages/BillDetail';
 
 function App() {
   return (
@@ -21,6 +23,8 @@ function App() {
           <Route element={<ProtectedRoute />}>
             <Route element={<DashboardLayout />}>
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/bills" element={<Bills />} />
+              <Route path="/bills/:id" element={<BillDetail />} />
               <Route path="/groups" element={<Groups />} />
               <Route path="/groups/:id" element={<GroupDetail />} />
             </Route>

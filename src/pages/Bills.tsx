@@ -1,0 +1,304 @@
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { api, type Bill, type Group } from '../lib/api';
+import { Button } from '../components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
+import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
+import { Skeleton } from '../components/ui/skeleton';
+import { Badge } from '../components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { Progress } from '../components/ui/progress';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "../components/ui/dialog"
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "../components/ui/select"
+import { Receipt, Plus, Calendar } from 'lucide-react';
+
+// Define extended type
+type BillExtended = Bill & { total_members: number, paid_count: number, progress: number };
+
+const Bills: React.FC = () => {
+    const { user } = useAuth();
+    const navigate = useNavigate();
+
+    const [bills, setBills] = useState<BillExtended[]>([]);
+    const [groups, setGroups] = useState<Group[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    // Form states
+    const [open, setOpen] = useState(false);
+    const [judul, setJudul] = useState('');
+    const [groupId, setGroupId] = useState('');
+    const [nominalStr, setNominalStr] = useState('');
+    const [deadline, setDeadline] = useState('');
+    const [isCreating, setIsCreating] = useState(false);
+
+    useEffect(() => {
+        if (!user) return;
+        const fetchData = async () => {
+            try {
+                setLoading(true);
+                const [bData, gData] = await Promise.all([
+                    api.getAllBills(user.id),
+                    api.getGroups(user.id)
+                ]);
+                setBills(bData);
+                setGroups(gData);
+            } catch (error) {
+                console.error("Failed to fetch bills data:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchData();
+    }, [user]);
+
+    const formatCurrency = (amount: number) => {
+        return new Intl.NumberFormat('id-ID', {
+            style: 'currency',
+            currency: 'IDR',
+            maximumFractionDigits: 0
+        }).format(amount);
+    };
+
+    const handleNominalChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        // Only allow numbers
+        const val = e.target.value.replace(/\D/g, '');
+        if (val) {
+            // Format to string with separators
+            setNominalStr(new Intl.NumberFormat('id-ID').format(parseInt(val, 10)));
+        } else {
+            setNominalStr('');
+        }
+    };
+
+    const handleCreateBill = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!user || !judul || !groupId || !nominalStr || !deadline) return;
+
+        const nominalValue = parseInt(nominalStr.replace(/\./g, ''), 10);
+        if (isNaN(nominalValue) || nominalValue <= 0) {
+            alert("Nominal tidak valid.");
+            return;
+        }
+
+        setIsCreating(true);
+        try {
+            const newBill = await api.createBill(groupId, judul, nominalValue, deadline);
+
+            // Re-fetch to get accurate progress stats after cascade
+            const refreshedBills = await api.getAllBills(user.id);
+            setBills(refreshedBills);
+
+            setOpen(false);
+            setJudul('');
+            setGroupId('');
+            setNominalStr('');
+            setDeadline('');
+
+            // Navigate straight to detail view
+            navigate(`/bills/${newBill.id}`);
+        } catch (error) {
+            console.error("Failed to create bill:", error);
+            alert("Gagal membuat tagihan. Pastikan grup memiliki anggota.");
+        } finally {
+            setIsCreating(false);
+        }
+    };
+
+    const getBadgeVariant = (status: string) => {
+        switch (status) {
+            case 'active': return 'default';
+            case 'closed': return 'secondary';
+            default: return 'outline';
+        }
+    };
+
+    const filterBills = (status: string) => {
+        if (status === 'all') return bills;
+        return bills.filter(b => b.status === status);
+    };
+
+    const renderBillCard = (bill: BillExtended) => (
+        <Card key={bill.id} className="cursor-pointer hover:shadow-md transition-all" onClick={() => navigate(`/bills/${bill.id}`)}>
+            <CardHeader className="pb-3">
+                <div className="flex justify-between items-start gap-2">
+                    <CardTitle className="text-lg line-clamp-1">{bill.judul}</CardTitle>
+                    <Badge variant={getBadgeVariant(bill.status) as any} className={bill.status === 'active' ? 'bg-blue-100 text-blue-800 hover:bg-blue-100' : ''}>
+                        {bill.status === 'active' ? 'Aktif' : bill.status === 'closed' ? 'Selesai' : 'Draft'}
+                    </Badge>
+                </div>
+                <CardDescription className="flex flex-col gap-1 mt-1">
+                    <span className="font-medium text-slate-700">{bill.groups?.nama}</span>
+                    <span className="flex items-center gap-1 text-xs">
+                        <Calendar className="h-3 w-3" /> Deadline: {new Date(bill.deadline).toLocaleDateString('id-ID')}
+                    </span>
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <p className="text-xl font-bold mb-4">{formatCurrency(bill.nominal)}</p>
+                <div className="space-y-1.5">
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                        <span>Progress Pembayaran</span>
+                        <span className="font-medium">{bill.paid_count} / {bill.total_members} Anggota</span>
+                    </div>
+                    <Progress value={bill.progress} className="h-2" />
+                </div>
+            </CardContent>
+        </Card>
+    );
+
+    return (
+        <div className="w-full space-y-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                    <h1 className="text-3xl font-bold tracking-tight">Tagihan</h1>
+                    <p className="text-muted-foreground mt-1">
+                        Kelola dan pantau semua tagihan kas yang sedang berjalan.
+                    </p>
+                </div>
+
+                <Dialog open={open} onOpenChange={setOpen}>
+                    <DialogTrigger asChild>
+                        <Button className="bg-green-600 hover:bg-green-700">
+                            <Plus className="mr-2 h-4 w-4" />
+                            Buat Tagihan
+                        </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[425px]">
+                        <form onSubmit={handleCreateBill}>
+                            <DialogHeader>
+                                <DialogTitle>Buat Tagihan Baru</DialogTitle>
+                                <DialogDescription>
+                                    Tagihan akan berstatus "Draft" saat baru dibuat sehingga Anda bisa mengecek ulang.
+                                </DialogDescription>
+                            </DialogHeader>
+                            <div className="grid gap-4 py-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="judul">Judul Tagihan</Label>
+                                    <Input
+                                        id="judul"
+                                        placeholder="Contoh: Kas Bulan Maret"
+                                        value={judul}
+                                        onChange={(e) => setJudul(e.target.value)}
+                                        required
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="grup">Grup / Kelas</Label>
+                                    <Select value={groupId} onValueChange={setGroupId} required>
+                                        <SelectTrigger id="grup">
+                                            <SelectValue placeholder="Pilih grup" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {groups.map(g => (
+                                                <SelectItem key={g.id} value={g.id}>{g.nama}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="nominal">Nominal (Rp)</Label>
+                                    <Input
+                                        id="nominal"
+                                        placeholder="Contoh: 15.000"
+                                        value={nominalStr}
+                                        onChange={handleNominalChange}
+                                        required
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="deadline">Tenggat Waktu (Deadline)</Label>
+                                    <Input
+                                        id="deadline"
+                                        type="date"
+                                        value={deadline}
+                                        onChange={(e) => setDeadline(e.target.value)}
+                                        required
+                                    />
+                                </div>
+                            </div>
+                            <DialogFooter>
+                                <Button type="button" variant="outline" onClick={() => setOpen(false)}>Batal</Button>
+                                <Button type="submit" disabled={isCreating || groups.length === 0} className="bg-green-600 hover:bg-green-700">
+                                    {isCreating ? 'Menyimpan...' : 'Simpan Draft'}
+                                </Button>
+                            </DialogFooter>
+                        </form>
+                    </DialogContent>
+                </Dialog>
+            </div>
+
+            {loading ? (
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {[1, 2, 3].map(i => <Skeleton key={i} className="h-48 w-full rounded-xl" />)}
+                </div>
+            ) : bills.length === 0 ? (
+                <div className="flex flex-col items-center justify-center p-12 text-center border border-dashed rounded-xl bg-slate-50">
+                    <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center text-green-600 mb-4">
+                        <Receipt className="w-8 h-8" />
+                    </div>
+                    <h2 className="text-xl font-bold mb-2">Belum ada tagihan</h2>
+                    <p className="text-muted-foreground mb-6 max-w-sm">
+                        Mulai tagih kas ke anggota grup dengan membuat tagihan pertama Anda.
+                    </p>
+                    <Button onClick={() => setOpen(true)} className="bg-green-600 hover:bg-green-700">
+                        <Plus className="mr-2 h-4 w-4" /> Buat Tagihan Sekarang
+                    </Button>
+                </div>
+            ) : (
+                <Tabs defaultValue="all" className="w-full">
+                    <TabsList className="mb-4">
+                        <TabsTrigger value="all">Semua</TabsTrigger>
+                        <TabsTrigger value="active">Aktif</TabsTrigger>
+                        <TabsTrigger value="draft">Draft</TabsTrigger>
+                        <TabsTrigger value="closed">Selesai</TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent value="all" className="mt-0 border-none p-0 outline-none">
+                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                            {bills.map(renderBillCard)}
+                        </div>
+                    </TabsContent>
+
+                    <TabsContent value="active" className="mt-0 border-none p-0 outline-none">
+                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                            {filterBills('active').map(renderBillCard)}
+                        </div>
+                    </TabsContent>
+
+                    <TabsContent value="draft" className="mt-0 border-none p-0 outline-none">
+                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                            {filterBills('draft').map(renderBillCard)}
+                        </div>
+                    </TabsContent>
+
+                    <TabsContent value="closed" className="mt-0 border-none p-0 outline-none">
+                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                            {filterBills('closed').map(renderBillCard)}
+                        </div>
+                    </TabsContent>
+                </Tabs>
+            )}
+        </div>
+    );
+};
+
+export default Bills;
