@@ -1,6 +1,6 @@
 import { supabase } from './supabase';
 import { v4 as uuidv4 } from 'uuid';
-import { sendWhatsApp } from './fonnte';
+import { sendEmail } from './email';
 import { createPaymentLink } from './mayar';
 export interface Group {
     id: string;
@@ -14,6 +14,7 @@ export interface Member {
     id: string;
     group_id: string;
     nama: string;
+    email: string | null;
     nomor_wa: string | null;
     created_at: string;
 }
@@ -84,10 +85,10 @@ export const api = {
         return data as Member[];
     },
 
-    addMember: async (groupId: string, nama: string, nomorWa?: string) => {
+    addMember: async (groupId: string, nama: string, email: string, nomorWa?: string) => {
         const { data, error } = await supabase
             .from('members')
-            .insert({ group_id: groupId, nama, nomor_wa: nomorWa })
+            .insert({ group_id: groupId, nama, email, nomor_wa: nomorWa })
             .select()
             .single();
         if (error) throw error;
@@ -347,7 +348,7 @@ export const api = {
             .from('payments')
             .select(`
         *,
-        members (id, nama, nomor_wa)
+        members (id, nama, email, nomor_wa)
       `)
             .eq('bill_id', billId);
 
@@ -366,7 +367,7 @@ export const api = {
 
         const { data: payments, error: payError } = await supabase
             .from('payments')
-            .select('*, members(nama, nomor_wa)')
+            .select('*, members(nama, email, nomor_wa)')
             .eq('bill_id', billId)
             .eq('status', 'pending');
 
@@ -405,23 +406,28 @@ export const api = {
                         .eq('id', p.id);
                 }
 
-                const waNumber = (p.members as any)?.nomor_wa;
+                const memberEmail = (p.members as any)?.email;
 
-                if (waNumber) {
-                    const nominalRp = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(bill.nominal);
-                    const deadlineStr = new Date(bill.deadline).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+                if (memberEmail) {
                     const payLink = `${appUrl}/pay/${paymentToken}`;
 
-                    const message = `Halo ${namaMember} 👋\nAda tagihan *${bill.judul}* dari *${namaGroup}*\n\n💰 Nominal: ${nominalRp}\n📅 Deadline: ${deadlineStr}\n\nBayar sekarang di sini:\n${payLink}\n\nTerima kasih!`;
+                    const result = await sendEmail({
+                        to: memberEmail,
+                        nama: namaMember,
+                        judul: bill.judul,
+                        grup: namaGroup,
+                        nominal: bill.nominal,
+                        deadline: bill.deadline,
+                        payment_link: payLink
+                    });
 
-                    const result = await sendWhatsApp(waNumber, message);
                     if (result.success) {
                         totalSent++;
                     } else {
                         failedList.push(namaMember);
                     }
                 } else {
-                    failedList.push(`${namaMember} (No WA)`);
+                    failedList.push(`${namaMember} (No Email)`);
                 }
             }
         }
@@ -454,18 +460,23 @@ export const api = {
             for (const p of payments) {
                 if (!p.payment_token) continue;
 
-                const waNumber = (p.members as any)?.nomor_wa;
+                const memberEmail = (p.members as any)?.email;
                 const namaMember = (p.members as any)?.nama || 'Anggota';
                 const namaGroup = (bill.groups as any)?.nama || 'Grup';
 
-                if (waNumber) {
-                    const nominalRp = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(bill.nominal);
-                    const deadlineStr = new Date(bill.deadline).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+                if (memberEmail) {
                     const payLink = `${appUrl}/pay/${p.payment_token}`;
 
-                    const message = `[REMINDER]\nHalo ${namaMember} 👋\nMengingatkan tagihan *${bill.judul}* dari *${namaGroup}* yang belum lunas.\n\n💰 Nominal: ${nominalRp}\n📅 Deadline: ${deadlineStr}\n\nBayar sekarang di sini:\n${payLink}\n\nTerima kasih!`;
+                    const result = await sendEmail({
+                        to: memberEmail,
+                        nama: namaMember,
+                        judul: bill.judul,
+                        grup: namaGroup,
+                        nominal: bill.nominal,
+                        deadline: bill.deadline,
+                        payment_link: payLink
+                    });
 
-                    const result = await sendWhatsApp(waNumber, message);
                     if (result.success) totalSent++;
                 }
             }

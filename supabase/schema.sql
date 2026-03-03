@@ -20,6 +20,7 @@ CREATE TABLE members (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     group_id UUID REFERENCES groups(id) ON DELETE CASCADE NOT NULL,
     nama TEXT NOT NULL,
+    email TEXT,
     nomor_wa TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );

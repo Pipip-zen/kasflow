@@ -35,9 +35,9 @@ const GroupDetail: React.FC = () => {
     const [members, setMembers] = useState<Member[]>([]);
     const [loading, setLoading] = useState(true);
 
-    // Dialog Add Member State
     const [openAdd, setOpenAdd] = useState(false);
     const [newMemberName, setNewMemberName] = useState('');
+    const [newMemberEmail, setNewMemberEmail] = useState('');
     const [newMemberWa, setNewMemberWa] = useState('');
     const [isAdding, setIsAdding] = useState(false);
 
@@ -67,14 +67,15 @@ const GroupDetail: React.FC = () => {
 
     const handleAddMember = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!id || !newMemberName.trim()) return;
+        if (!id || !newMemberName.trim() || !newMemberEmail.trim()) return;
 
         setIsAdding(true);
         try {
-            const newMember = await api.addMember(id, newMemberName, newMemberWa);
+            const newMember = await api.addMember(id, newMemberName, newMemberEmail.trim(), newMemberWa.trim());
             setMembers([newMember, ...members]);
             setOpenAdd(false);
             setNewMemberName('');
+            setNewMemberEmail('');
             setNewMemberWa('');
         } catch (error) {
             console.error("Failed to add member:", error);
@@ -159,6 +160,18 @@ const GroupDetail: React.FC = () => {
                                             />
                                         </div>
                                         <div className="space-y-2">
+                                            <Label htmlFor="mem-email">Alamat Email <span className="text-red-500">*</span></Label>
+                                            <Input
+                                                id="mem-email"
+                                                type="email"
+                                                placeholder="Contoh: andi@gmail.com"
+                                                value={newMemberEmail}
+                                                onChange={(e) => setNewMemberEmail(e.target.value)}
+                                                required
+                                            />
+                                            <p className="text-xs text-muted-foreground">Wajib diisi untk menerima notifikasi tagihan Otomatis.</p>
+                                        </div>
+                                        <div className="space-y-2">
                                             <Label htmlFor="mem-wa">Nomor WhatsApp (Opsional)</Label>
                                             <Input
                                                 id="mem-wa"
@@ -166,7 +179,6 @@ const GroupDetail: React.FC = () => {
                                                 value={newMemberWa}
                                                 onChange={(e) => setNewMemberWa(e.target.value)}
                                             />
-                                            <p className="text-xs text-muted-foreground">Isi agar bisa dikirimi pesan WA otomatis nantinya.</p>
                                         </div>
                                     </div>
                                     <DialogFooter>

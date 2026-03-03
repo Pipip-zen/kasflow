@@ -13,11 +13,6 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      '/api/fonnte': {
-        target: 'https://api.fonnte.com',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api\/fonnte/, ''),
-      },
       '/api/mayar': {
         target: 'https://api.mayar.id',
         changeOrigin: true,
