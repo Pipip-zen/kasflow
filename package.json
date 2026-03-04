@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "@hookform/resolvers": "^5.2.2",
     "@supabase/supabase-js": "^2.98.0",
     "@tailwindcss/vite": "^4.2.1",
@@ -23,6 +24,7 @@
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-hook-form": "^7.71.2",
+    "react-markdown": "^10.1.0",
     "react-router-dom": "^7.13.1",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.5.0",
