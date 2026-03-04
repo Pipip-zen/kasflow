@@ -13,6 +13,7 @@ import PublicPayment from './pages/PublicPayment';
 import VerifyEmail from './pages/VerifyEmail';
 import AuthCallback from './pages/AuthCallback';
 import NotFound from './pages/NotFound';
+import KasBotChat from './pages/KasBotChat';
 import { Toaster } from 'sonner';
 
 function App() {
@@ -40,6 +41,7 @@ function App() {
               <Route path="/bills/:id" element={<BillDetail />} />
               <Route path="/groups" element={<Groups />} />
               <Route path="/groups/:id" element={<GroupDetail />} />
+              <Route path="/chat" element={<KasBotChat />} />
             </Route>
           </Route>
 

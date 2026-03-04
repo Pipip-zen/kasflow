@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LayoutDashboard, Users, LogOut, Menu, FileText } from 'lucide-react';
+import { LayoutDashboard, Users, LogOut, Menu, FileText, Bot } from 'lucide-react';
 import { Button } from './ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from './ui/sheet';
 
@@ -19,6 +19,7 @@ export const DashboardLayout: React.FC = () => {
         { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { to: '/groups', label: 'Grup', icon: Users },
         { to: '/bills', label: 'Tagihan', icon: FileText },
+        { to: '/chat', label: 'KasBot AI', icon: Bot },
     ];
 
     const SidebarContent = () => (
