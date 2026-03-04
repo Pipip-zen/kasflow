@@ -35,18 +35,8 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
-
 import { Receipt, Plus, Calendar, MoreVertical, Edit, Trash2 } from 'lucide-react';
+import { DeleteBillDialog } from '../components/DeleteBillDialog';
 
 // Define extended type
 type BillExtended = Bill & { total_members: number, paid_count: number, progress: number };
@@ -197,12 +187,14 @@ const Bills: React.FC = () => {
 
     // --- Delete logic ---
     const [deleteBillId, setDeleteBillId] = useState('');
+    const [deleteBillJudul, setDeleteBillJudul] = useState('');
     const [isDeleting, setIsDeleting] = useState(false);
     const [openDeleteAlert, setOpenDeleteAlert] = useState(false);
     const [pendingDeleteStatus, setPendingDeleteStatus] = useState('');
 
-    const confirmDelete = (billId: string, status: string) => {
+    const confirmDelete = (billId: string, judul: string, status: string) => {
         setDeleteBillId(billId);
+        setDeleteBillJudul(judul);
         setPendingDeleteStatus(status);
         setOpenDeleteAlert(true);
     };
@@ -275,7 +267,7 @@ const Bills: React.FC = () => {
                                     <span>Edit</span>
                                 </DropdownMenuItem>
                             )}
-                            <DropdownMenuItem onClick={() => confirmDelete(bill.id, bill.status)} className="text-red-600 focus:bg-red-50 focus:text-red-700">
+                            <DropdownMenuItem onClick={() => confirmDelete(bill.id, bill.judul, bill.status)} className="text-red-600 focus:bg-red-50 focus:text-red-700">
                                 <Trash2 className="mr-2 h-4 w-4" />
                                 <span>Hapus</span>
                             </DropdownMenuItem>
@@ -431,23 +423,15 @@ const Bills: React.FC = () => {
             </Dialog>
 
             {/* Delete Alert Dialog */}
-            <AlertDialog open={openDeleteAlert} onOpenChange={setOpenDeleteAlert}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Hapus Tagihan Secara Permanen?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            Tindakan ini tidak dapat dibatalkan. Menghapus tagihan juga akan menghapus <strong>seluruh data pembayaran</strong> yang ada di dalamnya.
-                            {pendingDeleteStatus === 'active' && <span className="block mt-2 font-bold text-red-600">Peringatan: Tagihan ini sedang aktif!</span>}
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Batal</AlertDialogCancel>
-                        <AlertDialogAction onClick={executeDelete} disabled={isDeleting} className="bg-red-600 hover:bg-red-700 focus:ring-red-600">
-                            {isDeleting ? 'Menghapus...' : 'Ya, Hapus Tagihan'}
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+            <DeleteBillDialog
+                open={openDeleteAlert}
+                onOpenChange={setOpenDeleteAlert}
+                billId={deleteBillId}
+                billJudul={deleteBillJudul}
+                billStatus={pendingDeleteStatus}
+                onConfirm={executeDelete}
+                loading={isDeleting}
+            />
 
             {loading ? (
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

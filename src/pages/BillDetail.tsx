@@ -25,22 +25,13 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog"
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-    AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ArrowLeft, CheckCircle2, XCircle, MessageCircle, PlayCircle, StopCircle, UserX, Edit, Trash2, Mail, Bell } from 'lucide-react';
 import { toast } from 'sonner';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { DeleteBillDialog } from '../components/DeleteBillDialog';
 
 type PaymentWithMember = Payment & { members: Member };
 type BillExtended = Bill & { total_members: number, paid_count: number, progress: number };
@@ -196,6 +187,8 @@ const BillDetail: React.FC = () => {
 
     // --- Delete Bill logic ---
     const [isDeleting, setIsDeleting] = useState(false);
+    const [openDeleteAlert, setOpenDeleteAlert] = useState(false);
+
     const handleDeleteBill = async () => {
         if (!bill) return;
 
@@ -410,28 +403,9 @@ const BillDetail: React.FC = () => {
                         </Button>
                     )}
 
-                    <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                            <Button variant="ghost" className="text-red-600 hover:bg-red-50 hover:text-red-700 pointer-events-auto">
-                                <Trash2 className="w-4 h-4" />
-                            </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                                <AlertDialogTitle>Hapus Tagihan Secara Permanen?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                    Tindakan ini tidak dapat dibatalkan. Menghapus tagihan juga akan menghapus <strong>seluruh data pembayaran</strong> dan link Mayar yang terkait.
-                                    {bill.status === 'active' && <span className="block mt-2 font-bold text-red-600">Peringatan: Tagihan ini sedang aktif!</span>}
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                                <AlertDialogCancel>Batal</AlertDialogCancel>
-                                <AlertDialogAction onClick={handleDeleteBill} disabled={isDeleting} className="bg-red-600 hover:bg-red-700 focus:ring-red-600">
-                                    {isDeleting ? 'Menghapus...' : 'Ya, Hapus Tagihan'}
-                                </AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
+                    <Button onClick={() => setOpenDeleteAlert(true)} variant="ghost" className="text-red-600 hover:bg-red-50 hover:text-red-700 pointer-events-auto">
+                        <Trash2 className="w-4 h-4" />
+                    </Button>
                 </div>
             </div>
 
@@ -563,28 +537,9 @@ const BillDetail: React.FC = () => {
                     </Button>
                 )}
 
-                <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                        <Button variant="ghost" className="w-full text-red-600 hover:bg-red-50 hover:text-red-700 pointer-events-auto">
-                            <Trash2 className="w-4 h-4 mr-2" /> Hapus Tagihan
-                        </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                        <AlertDialogHeader>
-                            <AlertDialogTitle>Hapus Tagihan Secara Permanen?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                                Tindakan ini tidak dapat dibatalkan. Menghapus tagihan juga akan menghapus <strong>seluruh data pembayaran</strong> dan link Mayar yang terkait.
-                                {bill.status === 'active' && <span className="block mt-2 font-bold text-red-600">Peringatan: Tagihan ini sedang aktif!</span>}
-                            </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                            <AlertDialogCancel>Batal</AlertDialogCancel>
-                            <AlertDialogAction onClick={handleDeleteBill} disabled={isDeleting} className="bg-red-600 hover:bg-red-700 focus:ring-red-600">
-                                {isDeleting ? 'Menghapus...' : 'Ya, Hapus Tagihan'}
-                            </AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
+                <Button onClick={() => setOpenDeleteAlert(true)} variant="ghost" className="w-full text-red-600 hover:bg-red-50 hover:text-red-700 pointer-events-auto">
+                    <Trash2 className="w-4 h-4 mr-2" /> Hapus Tagihan
+                </Button>
             </div>
 
             {/* Dialog Confirmations */}
@@ -619,6 +574,15 @@ const BillDetail: React.FC = () => {
                 confirmVariant="destructive"
                 onConfirm={executeUpdateStatusClosed}
                 loading={isUpdatingStatus}
+            />
+            <DeleteBillDialog
+                open={openDeleteAlert}
+                onOpenChange={setOpenDeleteAlert}
+                billId={bill.id}
+                billJudul={bill.judul}
+                billStatus={bill.status}
+                onConfirm={handleDeleteBill}
+                loading={isDeleting}
             />
         </div>
     );
