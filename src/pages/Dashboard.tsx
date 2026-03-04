@@ -78,8 +78,8 @@ const Dashboard: React.FC = () => {
     return (
         <div className="w-full space-y-8">
             <div>
-                <h1 className="text-3xl font-bold tracking-tight">Ikhtisar Kas</h1>
-                <p className="text-muted-foreground mt-1">
+                <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Ikhtisar Kas</h1>
+                <p className="text-muted-foreground mt-1 text-sm md:text-base">
                     Pantau ringkasan tagihan dan kas Anda hari ini.
                 </p>
             </div>
@@ -99,7 +99,7 @@ const Dashboard: React.FC = () => {
                 </div>
             ) : (
                 <>
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                    <div className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-4">
                         {/* Stat Cards */}
                         <Card>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -107,7 +107,7 @@ const Dashboard: React.FC = () => {
                                 <Wallet className="h-4 w-4 text-muted-foreground" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold">{formatCurrency(stats.totalCash)}</div>
+                                <div className="text-xl md:text-2xl font-bold">{formatCurrency(stats.totalCash)}</div>
                                 <p className="text-xs text-muted-foreground mt-1">Dari semua pembayaran lunas</p>
                             </CardContent>
                         </Card>

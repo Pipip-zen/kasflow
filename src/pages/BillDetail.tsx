@@ -255,38 +255,40 @@ const BillDetail: React.FC = () => {
         }
 
         return (
-            <Table>
-                <TableHeader>
-                    <TableRow>
-                        <TableHead>Nama Anggota</TableHead>
-                        <TableHead>Alamat Email</TableHead>
-                        <TableHead>Tanggal Bayar</TableHead>
-                        <TableHead className="text-right">Status</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {filtered.map(payment => (
-                        <TableRow key={payment.id}>
-                            <TableCell className="font-medium">{payment.members.nama}</TableCell>
-                            <TableCell>{payment.members.email || '-'}</TableCell>
-                            <TableCell className="text-muted-foreground text-sm">
-                                {payment.paid_at ? new Date(payment.paid_at).toLocaleDateString('id-ID') : '-'}
-                            </TableCell>
-                            <TableCell className="text-right">
-                                {payment.status === 'paid' ? (
-                                    <Badge className="bg-green-100 text-green-800 hover:bg-green-100 border-green-200">
-                                        <CheckCircle2 className="w-3 h-3 mr-1" /> Sudah
-                                    </Badge>
-                                ) : (
-                                    <Badge variant="outline" className="text-red-600 border-red-200 bg-red-50">
-                                        <XCircle className="w-3 h-3 mr-1" /> Belum
-                                    </Badge>
-                                )}
-                            </TableCell>
+            <div className="overflow-x-auto w-full -mx-0">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead className="whitespace-nowrap">Nama Anggota</TableHead>
+                            <TableHead className="whitespace-nowrap">Email</TableHead>
+                            <TableHead className="whitespace-nowrap">Tgl Bayar</TableHead>
+                            <TableHead className="text-right whitespace-nowrap">Status</TableHead>
                         </TableRow>
-                    ))}
-                </TableBody>
-            </Table>
+                    </TableHeader>
+                    <TableBody>
+                        {filtered.map(payment => (
+                            <TableRow key={payment.id}>
+                                <TableCell className="font-medium whitespace-nowrap">{payment.members.nama}</TableCell>
+                                <TableCell className="text-sm max-w-[130px] truncate">{payment.members.email || '-'}</TableCell>
+                                <TableCell className="text-muted-foreground text-sm whitespace-nowrap">
+                                    {payment.paid_at ? new Date(payment.paid_at).toLocaleDateString('id-ID') : '-'}
+                                </TableCell>
+                                <TableCell className="text-right">
+                                    {payment.status === 'paid' ? (
+                                        <Badge className="bg-green-100 text-green-800 hover:bg-green-100 border-green-200">
+                                            <CheckCircle2 className="w-3 h-3 mr-1" /> Sudah
+                                        </Badge>
+                                    ) : (
+                                        <Badge variant="outline" className="text-red-600 border-red-200 bg-red-50">
+                                            <XCircle className="w-3 h-3 mr-1" /> Belum
+                                        </Badge>
+                                    )}
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </div>
         );
     };
 
@@ -306,7 +308,7 @@ const BillDetail: React.FC = () => {
     const totalPotensi = bill.total_members * bill.nominal;
 
     return (
-        <div className="w-full space-y-6 pb-12">
+        <div className="w-full space-y-4 pb-48 md:pb-8">
             <Button variant="ghost" className="mb-2 -ml-3 text-muted-foreground" onClick={() => navigate('/bills')}>
                 <ArrowLeft className="mr-2 h-4 w-4" /> Kembali ke Daftar Tagihan
             </Button>
@@ -412,15 +414,15 @@ const BillDetail: React.FC = () => {
             {/* Progress Section */}
             <Card className="bg-gradient-to-br from-green-50 to-white border-green-100">
                 <CardContent className="p-6">
-                    <div className="flex flex-col md:flex-row justify-between items-end mb-4 gap-4">
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-4 gap-3">
                         <div>
                             <p className="text-sm font-medium text-green-800 mb-1">Total Kas Terkumpul</p>
-                            <div className="flex items-baseline gap-2">
-                                <span className="text-3xl font-bold text-slate-900">{formatCurrency(totalTerkumpul)}</span>
+                            <div className="flex items-baseline gap-2 flex-wrap">
+                                <span className="text-2xl md:text-3xl font-bold text-slate-900">{formatCurrency(totalTerkumpul)}</span>
                                 <span className="text-sm text-slate-500 font-medium">/ {formatCurrency(totalPotensi)}</span>
                             </div>
                         </div>
-                        <div className="text-right">
+                        <div className="md:text-right">
                             <p className="text-sm font-medium text-slate-600 mb-1">Target Anggota</p>
                             <p className="text-lg font-bold text-slate-900">{bill.paid_count} <span className="text-sm font-normal text-muted-foreground">dari {bill.total_members} Lunas</span></p>
                         </div>
