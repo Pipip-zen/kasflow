@@ -38,10 +38,14 @@ const Auth: React.FC = () => {
     const navigate = useNavigate();
     const { user } = useAuth();
 
-    // Redirect if already logged in
+    // Redirect if already logged in and confirmed
     useEffect(() => {
         if (user) {
-            navigate('/dashboard', { replace: true });
+            if (!user.email_confirmed_at) {
+                navigate('/verify-email', { replace: true, state: { email: user.email } });
+            } else {
+                navigate('/dashboard', { replace: true });
+            }
         }
     }, [user, navigate]);
 
@@ -82,7 +86,8 @@ const Auth: React.FC = () => {
             options: {
                 data: {
                     nama: regName,
-                }
+                },
+                emailRedirectTo: `${window.location.origin}/auth/callback`
             }
         });
 
@@ -107,8 +112,8 @@ const Auth: React.FC = () => {
             }
         }
 
-        toast.success("Berhasil mendaftar akun!", { id: 'auth' });
-        navigate('/dashboard');
+        toast.success("Berhasil mendaftar! Silakan cek email Anda.", { id: 'auth' });
+        navigate('/verify-email', { state: { email: regEmail } });
     };
 
     return (

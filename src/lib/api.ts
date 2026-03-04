@@ -74,6 +74,14 @@ export const api = {
         return data as Group;
     },
 
+    deleteGroup: async (groupId: string) => {
+        const { error } = await supabase
+            .from('groups')
+            .delete()
+            .eq('id', groupId);
+        if (error) throw error;
+    },
+
     // --------- MEMBERS ---------
     getMembers: async (groupId: string) => {
         const { data, error } = await supabase

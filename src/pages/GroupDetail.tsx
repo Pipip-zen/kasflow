@@ -26,7 +26,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog"
-import { ArrowLeft, Plus, UserX, User } from 'lucide-react';
+import { ArrowLeft, Plus, UserX, User, Trash2 } from 'lucide-react';
 
 const GroupDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -112,6 +112,26 @@ const GroupDetail: React.FC = () => {
         }
     };
 
+    const [openConfirmDeleteGroup, setOpenConfirmDeleteGroup] = useState(false);
+    const [isDeletingGroup, setIsDeletingGroup] = useState(false);
+
+    const handleDeleteGroup = async () => {
+        if (!id || !group) return;
+        setIsDeletingGroup(true);
+        toast.loading(`Menghapus grup ${group.nama}...`, { id: 'del-group' });
+        try {
+            await api.deleteGroup(id);
+            toast.success(`Grup ${group.nama} berhasil dihapus.`, { id: 'del-group' });
+            navigate('/groups', { replace: true });
+        } catch (error) {
+            console.error("Failed to delete group:", error);
+            toast.error("Gagal menghapus grup. Pastikan grup dalam keadaan kosong.", { id: 'del-group' });
+        } finally {
+            setIsDeletingGroup(false);
+            setOpenConfirmDeleteGroup(false);
+        }
+    };
+
     if (loading) {
         return (
             <div className="w-full space-y-4">
@@ -138,6 +158,13 @@ const GroupDetail: React.FC = () => {
                         {group.deskripsi || 'Tidak ada deskripsi.'}
                     </p>
                 </div>
+                <Button
+                    variant="destructive"
+                    onClick={() => setOpenConfirmDeleteGroup(true)}
+                    className="flex-shrink-0"
+                >
+                    <Trash2 className="w-4 h-4 mr-2" /> Hapus Grup
+                </Button>
             </div>
 
             <div className="grid gap-6">
@@ -258,6 +285,17 @@ const GroupDetail: React.FC = () => {
                 confirmText="Ya, Hapus"
                 confirmVariant="destructive"
                 onConfirm={executeDeleteMember}
+            />
+
+            <ConfirmDialog
+                open={openConfirmDeleteGroup}
+                onOpenChange={setOpenConfirmDeleteGroup}
+                title="Hapus Grup?"
+                description={`Tindakan ini permanen. Semua data tagihan, anggota, dan riwayat di dalam grup "${group?.nama}" akan terhapus total.`}
+                confirmText="Ya, Hapus Grup"
+                confirmVariant="destructive"
+                onConfirm={handleDeleteGroup}
+                loading={isDeletingGroup}
             />
         </div>
     );

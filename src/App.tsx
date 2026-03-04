@@ -10,6 +10,8 @@ import GroupDetail from './pages/GroupDetail';
 import Bills from './pages/Bills';
 import BillDetail from './pages/BillDetail';
 import PublicPayment from './pages/PublicPayment';
+import VerifyEmail from './pages/VerifyEmail';
+import AuthCallback from './pages/AuthCallback';
 import NotFound from './pages/NotFound';
 import { Toaster } from 'sonner';
 
@@ -27,6 +29,8 @@ function App() {
           {/* Public Routes */}
           <Route path="/" element={<Landing />} />
           <Route path="/auth" element={<Auth />} />
+          <Route path="/auth/callback" element={<AuthCallback />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/pay/:token" element={<PublicPayment />} />
 
           <Route element={<ProtectedRoute />}>
