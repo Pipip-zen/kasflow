@@ -29,7 +29,7 @@ export const createPaymentLink = async (data: MayarPaymentData): Promise<{ payme
             expiredAt: new Date(data.deadline).toISOString()
         };
 
-        const endpoint = 'https://api.mayar.id/hl/v1/payment/create';
+        const endpoint = 'https://api.mayar.club/hl/v1/payment/create';
 
         const response = await fetch(endpoint, { // NOTE: proxy bypass avoids OPTIONS blocked queries
             method: 'POST',
@@ -45,7 +45,7 @@ export const createPaymentLink = async (data: MayarPaymentData): Promise<{ payme
 
         if (result.statusCode === 200 || result.messages === 'success') {
             return {
-                payment_url: result.data.link,
+                payment_url: result.data.link ? result.data.link.replace('web.mayar.club') : null,
                 mayar_payment_id: result.data.id
             };
         } else {
