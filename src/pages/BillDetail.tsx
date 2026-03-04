@@ -308,7 +308,7 @@ const BillDetail: React.FC = () => {
     return (
         <div className="w-full space-y-6 pb-12">
             <Button variant="ghost" className="mb-2 -ml-3 text-muted-foreground" onClick={() => navigate('/bills')}>
-                <ArrowLeft className="mr-2 h-4 w-4" /> Kembali k Daftar Tagihan
+                <ArrowLeft className="mr-2 h-4 w-4" /> Kembali ke Daftar Tagihan
             </Button>
 
             {/* Header Info */}

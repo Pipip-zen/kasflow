@@ -125,7 +125,7 @@ const Auth: React.FC = () => {
                     </div>
                     <CardTitle className="text-2xl font-bold">KasFlow</CardTitle>
                     <CardDescription>
-                        Akses dashboard khusus bendahara
+                        Akses dashboard
                     </CardDescription>
                 </CardHeader>
 
@@ -212,7 +212,6 @@ const Auth: React.FC = () => {
                 </CardContent>
 
                 <CardFooter className="flex justify-center flex-col text-center text-sm text-muted-foreground pt-4 pb-6">
-                    <p>Anggota biasa tidak perlu membuat akun.</p>
                     <button
                         type="button"
                         onClick={() => navigate('/')}

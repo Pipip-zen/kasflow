@@ -149,7 +149,7 @@ const GroupDetail: React.FC = () => {
     return (
         <div className="w-full space-y-6">
             <Button variant="ghost" className="mb-2 -ml-3 text-muted-foreground" onClick={() => navigate('/groups')}>
-                <ArrowLeft className="mr-2 h-4 w-4" /> Kembali k Daftar Grup
+                <ArrowLeft className="mr-2 h-4 w-4" /> Kembali ke Daftar Grup
             </Button>
 
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -172,7 +172,7 @@ const GroupDetail: React.FC = () => {
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between">
                         <div>
-                            <CardTitle>Anggota Grup</CardTitle>
+                            <CardTitle className="text-2xl font-bold mb-4">Anggota Grup</CardTitle>
                             <CardDescription>Kelola anggota yang terdaftar di grup ini ({members.length} anggota)</CardDescription>
                         </div>
 
