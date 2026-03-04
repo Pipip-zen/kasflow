@@ -15,6 +15,17 @@ const AuthCallback: React.FC = () => {
         hasProcessed.current = true;
 
         const handleEmailConfirmation = async () => {
+            console.log('=== AUTH CALLBACK TRIGGERED ===');
+            console.log('Full URL:', window.location.href);
+            console.log('Hash:', window.location.hash);
+            console.log('Search:', window.location.search);
+            console.log('Hash params:', Object.fromEntries(
+                new URLSearchParams(window.location.hash.substring(1))
+            ));
+            console.log('Query params:', Object.fromEntries(
+                new URLSearchParams(window.location.search)
+            ));
+
             try {
                 // Parse both URL formats
                 const hashParams = new URLSearchParams(window.location.hash.slice(1));
