@@ -255,8 +255,8 @@ const BillDetail: React.FC = () => {
         }
 
         return (
-            <div className="overflow-x-auto w-full -mx-0">
-                <Table>
+            <div className="overflow-x-auto w-full" style={{ WebkitOverflowScrolling: 'touch' }}>
+                <Table className="min-w-[500px]">
                     <TableHeader>
                         <TableRow>
                             <TableHead className="whitespace-nowrap">Nama Anggota</TableHead>
@@ -269,7 +269,7 @@ const BillDetail: React.FC = () => {
                         {filtered.map(payment => (
                             <TableRow key={payment.id}>
                                 <TableCell className="font-medium whitespace-nowrap">{payment.members.nama}</TableCell>
-                                <TableCell className="text-sm max-w-[130px] truncate">{payment.members.email || '-'}</TableCell>
+                                <TableCell className="text-sm whitespace-nowrap">{payment.members.email || '-'}</TableCell>
                                 <TableCell className="text-muted-foreground text-sm whitespace-nowrap">
                                     {payment.paid_at ? new Date(payment.paid_at).toLocaleDateString('id-ID') : '-'}
                                 </TableCell>
@@ -439,26 +439,28 @@ const BillDetail: React.FC = () => {
                         Pantau status pembayaran setiap anggota secara real-time.
                     </CardDescription>
                 </CardHeader>
-                <CardContent>
-                    <Tabs defaultValue="all" className="w-full">
-                        <TabsList className="mb-4">
-                            <TabsTrigger value="all">Semua ({payments.length})</TabsTrigger>
-                            <TabsTrigger value="paid" className="text-green-700 data-[state=active]:bg-green-100">Sudah Bayar</TabsTrigger>
-                            <TabsTrigger value="pending" className="text-red-700 data-[state=active]:bg-red-100">Belum Bayar</TabsTrigger>
-                        </TabsList>
+                <CardContent className="p-0">
+                    <div className="px-6 pt-2 pb-4">
+                        <Tabs defaultValue="all" className="w-full">
+                            <TabsList className="mb-4">
+                                <TabsTrigger value="all">Semua ({payments.length})</TabsTrigger>
+                                <TabsTrigger value="paid" className="text-green-700 data-[state=active]:bg-green-100">Sudah Bayar</TabsTrigger>
+                                <TabsTrigger value="pending" className="text-red-700 data-[state=active]:bg-red-100">Belum Bayar</TabsTrigger>
+                            </TabsList>
 
-                        <TabsContent value="all" className="mt-0 border-none p-0 outline-none">
-                            {renderTable('all')}
-                        </TabsContent>
+                            <TabsContent value="all" className="mt-0 border-none p-0 outline-none">
+                                {renderTable('all')}
+                            </TabsContent>
 
-                        <TabsContent value="paid" className="mt-0 border-none p-0 outline-none">
-                            {renderTable('paid')}
-                        </TabsContent>
+                            <TabsContent value="paid" className="mt-0 border-none p-0 outline-none">
+                                {renderTable('paid')}
+                            </TabsContent>
 
-                        <TabsContent value="pending" className="mt-0 border-none p-0 outline-none">
-                            {renderTable('pending')}
-                        </TabsContent>
-                    </Tabs>
+                            <TabsContent value="pending" className="mt-0 border-none p-0 outline-none">
+                                {renderTable('pending')}
+                            </TabsContent>
+                        </Tabs>
+                    </div>
                 </CardContent>
             </Card>
 

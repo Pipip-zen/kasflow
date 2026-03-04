@@ -17,11 +17,131 @@ const FUNCTION_LABELS: Record<string, string> = {
     close_bill: 'Tagihan berhasil ditutup',
 };
 
+const SUGGESTED_QUESTIONS = [
+    '💰 Siapa yang belum bayar bulan ini?',
+    '📊 Berapa total kas yang terkumpul?',
+    '📈 Analisis pola pembayaran',
+    '📧 Kirim reminder ke yang belum bayar',
+];
+
 type ExtendedMessage = ChatMessage & {
     functionCalled?: string;
     isError?: boolean;
 };
 
+// ---------- WELCOME STATE ----------
+function WelcomeState({ onSend }: { onSend: (q: string) => void }) {
+    return (
+        <div className="flex flex-col items-center justify-center h-full text-center space-y-6 px-4 py-8">
+            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center animate-bounce">
+                <Bot className="w-10 h-10 text-green-600" />
+            </div>
+            <div>
+                <h2 className="text-2xl font-bold text-gray-800">Halo! Saya KasBot 👋</h2>
+                <p className="text-gray-500 mt-2">Asisten AI untuk membantu kamu kelola kas</p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-2xl">
+                {SUGGESTED_QUESTIONS.map((q, i) => (
+                    <button
+                        key={i}
+                        onClick={() => onSend(q)}
+                        className="p-4 bg-white border border-gray-200 rounded-xl text-left hover:border-green-500 hover:bg-green-50 transition-all text-sm text-gray-700 shadow-sm active:scale-95"
+                    >
+                        {q}
+                    </button>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+// ---------- BUBBLE COMPONENT ----------
+function MessageBubble({ msg, index }: { msg: ExtendedMessage; index: number }) {
+    const isUser = msg.role === 'user';
+
+    return (
+        <div
+            className={`flex ${isUser ? 'justify-end' : 'justify-start'} animate-in fade-in-0 slide-in-from-${isUser ? 'right' : 'left'}-4 duration-300`}
+            style={{ animationDelay: `${Math.min(index * 30, 150)}ms` }}
+        >
+            <div className={`flex gap-3 max-w-[88%] sm:max-w-[80%] ${isUser ? 'flex-row-reverse' : ''}`}>
+                {!isUser && (
+                    <div className="w-8 h-8 rounded-full bg-green-100 flex-shrink-0 flex items-center justify-center mt-1 shadow-sm">
+                        <Bot className="w-4 h-4 text-green-600" />
+                    </div>
+                )}
+
+                <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} gap-1`}>
+                    {/* Function called chip */}
+                    {msg.functionCalled && (
+                        <div className="flex items-center gap-1 px-2 py-1 bg-green-50 border border-green-200 rounded-full text-[11px] text-green-700 font-medium">
+                            <CheckCircle className="w-3 h-3" />
+                            {FUNCTION_LABELS[msg.functionCalled] || msg.functionCalled}
+                        </div>
+                    )}
+
+                    {/* Error chip */}
+                    {msg.isError && (
+                        <div className="flex items-center gap-1 px-2 py-1 bg-red-50 border border-red-200 rounded-full text-[11px] text-red-700 font-medium">
+                            <XCircle className="w-3 h-3" />
+                            Terjadi gangguan
+                        </div>
+                    )}
+
+                    {/* Bubble */}
+                    <div
+                        className={`px-4 py-3 rounded-2xl transition-all ${isUser
+                            ? 'bg-green-600 text-white rounded-tr-sm'
+                            : msg.isError
+                                ? 'bg-red-50 border border-red-200 text-red-800 rounded-tl-sm shadow-sm'
+                                : 'bg-white border border-gray-200 text-gray-800 rounded-tl-sm shadow-sm'
+                            }`}
+                    >
+                        {!isUser ? (
+                            <div className="prose prose-sm prose-green max-w-none prose-p:leading-relaxed prose-pre:bg-gray-100 prose-pre:text-gray-800 prose-pre:rounded-lg prose-code:before:content-none prose-code:after:content-none prose-code:bg-gray-100 prose-code:px-1 prose-code:rounded prose-headings:text-gray-800">
+                                <ReactMarkdown>{msg.content}</ReactMarkdown>
+                            </div>
+                        ) : (
+                            <p className="whitespace-pre-wrap text-sm leading-relaxed">{msg.content}</p>
+                        )}
+                    </div>
+
+                    {/* Timestamp */}
+                    <span className="text-[11px] text-gray-400 px-1">
+                        {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// ---------- LOADING INDICATOR ----------
+function LoadingBubble({ status }: { status: string }) {
+    return (
+        <div className="flex justify-start animate-in fade-in-0 slide-in-from-left-4 duration-300">
+            <div className="flex gap-3 max-w-[85%]">
+                <div className="w-8 h-8 rounded-full bg-green-100 flex-shrink-0 flex items-center justify-center mt-1 shadow-sm">
+                    <Bot className="w-4 h-4 text-green-600" />
+                </div>
+                <div className="flex flex-col items-start gap-1">
+                    <div className="px-5 py-4 bg-white border border-gray-200 rounded-2xl rounded-tl-sm shadow-sm">
+                        <div className="flex gap-1.5 items-center h-4">
+                            <div className="w-2 h-2 bg-green-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                            <div className="w-2 h-2 bg-green-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                            <div className="w-2 h-2 bg-green-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                        </div>
+                    </div>
+                    <span className="text-[11px] text-gray-500 ml-1 font-medium italic animate-pulse">
+                        {status}
+                    </span>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// ---------- MAIN COMPONENT ----------
 export default function KasBotChat() {
     const { user } = useAuth();
     const [messages, setMessages] = useState<ExtendedMessage[]>([]);
@@ -92,8 +212,7 @@ export default function KasBotChat() {
                 ...prev,
                 {
                     role: 'assistant',
-                    content:
-                        'Maaf, saya mengalami gangguan saat ini. Coba lagi ya! 🙏',
+                    content: 'Maaf, saya mengalami gangguan saat ini. Coba lagi ya! 🙏',
                     timestamp: new Date(),
                     isError: true,
                 },
@@ -110,121 +229,6 @@ export default function KasBotChat() {
             handleSend();
         }
     };
-
-    // ---------- WELCOME STATE ----------
-    const suggestedQuestions = [
-        '💰 Siapa yang belum bayar bulan ini?',
-        '📊 Berapa total kas yang terkumpul?',
-        '📈 Analisis pola pembayaran',
-        '📧 Kirim reminder ke yang belum bayar',
-    ];
-
-    const WelcomeState = () => (
-        <div className="flex flex-col items-center justify-center h-full text-center space-y-6 px-4 py-8">
-            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center animate-bounce">
-                <Bot className="w-10 h-10 text-green-600" />
-            </div>
-            <div>
-                <h2 className="text-2xl font-bold text-gray-800">Halo! Saya KasBot 👋</h2>
-                <p className="text-gray-500 mt-2">Asisten AI untuk membantu kamu kelola kas</p>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-2xl">
-                {suggestedQuestions.map((q, i) => (
-                    <button
-                        key={i}
-                        onClick={() => handleSend(q)}
-                        className="p-4 bg-white border border-gray-200 rounded-xl text-left hover:border-green-500 hover:bg-green-50 transition-all text-sm text-gray-700 shadow-sm active:scale-95"
-                    >
-                        {q}
-                    </button>
-                ))}
-            </div>
-        </div>
-    );
-
-    // ---------- BUBBLE COMPONENT ----------
-    const MessageBubble = ({ msg, index }: { msg: ExtendedMessage; index: number }) => {
-        const isUser = msg.role === 'user';
-
-        return (
-            <div
-                className={`flex ${isUser ? 'justify-end' : 'justify-start'} animate-in fade-in-0 slide-in-from-${isUser ? 'right' : 'left'}-4 duration-300`}
-                style={{ animationDelay: `${Math.min(index * 30, 150)}ms` }}
-            >
-                <div className={`flex gap-3 max-w-[88%] sm:max-w-[80%] ${isUser ? 'flex-row-reverse' : ''}`}>
-                    {!isUser && (
-                        <div className="w-8 h-8 rounded-full bg-green-100 flex-shrink-0 flex items-center justify-center mt-1 shadow-sm">
-                            <Bot className="w-4 h-4 text-green-600" />
-                        </div>
-                    )}
-
-                    <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} gap-1`}>
-                        {/* Function called chip */}
-                        {msg.functionCalled && (
-                            <div className="flex items-center gap-1 px-2 py-1 bg-green-50 border border-green-200 rounded-full text-[11px] text-green-700 font-medium">
-                                <CheckCircle className="w-3 h-3" />
-                                {FUNCTION_LABELS[msg.functionCalled] || msg.functionCalled}
-                            </div>
-                        )}
-
-                        {/* Error chip */}
-                        {msg.isError && (
-                            <div className="flex items-center gap-1 px-2 py-1 bg-red-50 border border-red-200 rounded-full text-[11px] text-red-700 font-medium">
-                                <XCircle className="w-3 h-3" />
-                                Terjadi gangguan
-                            </div>
-                        )}
-
-                        {/* Bubble */}
-                        <div
-                            className={`px-4 py-3 rounded-2xl transition-all ${isUser
-                                ? 'bg-green-600 text-white rounded-tr-sm'
-                                : msg.isError
-                                    ? 'bg-red-50 border border-red-200 text-red-800 rounded-tl-sm shadow-sm'
-                                    : 'bg-white border border-gray-200 text-gray-800 rounded-tl-sm shadow-sm'
-                                }`}
-                        >
-                            {!isUser ? (
-                                <div className="prose prose-sm prose-green max-w-none prose-p:leading-relaxed prose-pre:bg-gray-100 prose-pre:text-gray-800 prose-pre:rounded-lg prose-code:before:content-none prose-code:after:content-none prose-code:bg-gray-100 prose-code:px-1 prose-code:rounded prose-headings:text-gray-800">
-                                    <ReactMarkdown>{msg.content}</ReactMarkdown>
-                                </div>
-                            ) : (
-                                <p className="whitespace-pre-wrap text-sm leading-relaxed">{msg.content}</p>
-                            )}
-                        </div>
-
-                        {/* Timestamp */}
-                        <span className="text-[11px] text-gray-400 px-1">
-                            {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                    </div>
-                </div>
-            </div>
-        );
-    };
-
-    // ---------- LOADING INDICATOR ----------
-    const LoadingBubble = () => (
-        <div className="flex justify-start animate-in fade-in-0 slide-in-from-left-4 duration-300">
-            <div className="flex gap-3 max-w-[85%]">
-                <div className="w-8 h-8 rounded-full bg-green-100 flex-shrink-0 flex items-center justify-center mt-1 shadow-sm">
-                    <Bot className="w-4 h-4 text-green-600" />
-                </div>
-                <div className="flex flex-col items-start gap-1">
-                    <div className="px-5 py-4 bg-white border border-gray-200 rounded-2xl rounded-tl-sm shadow-sm">
-                        <div className="flex gap-1.5 items-center h-4">
-                            <div className="w-2 h-2 bg-green-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                            <div className="w-2 h-2 bg-green-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                            <div className="w-2 h-2 bg-green-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                        </div>
-                    </div>
-                    <span className="text-[11px] text-gray-500 ml-1 font-medium italic animate-pulse">
-                        {loadingStatus}
-                    </span>
-                </div>
-            </div>
-        </div>
-    );
 
     // ---------- RENDER ----------
     return (
@@ -263,13 +267,13 @@ export default function KasBotChat() {
             {/* CHAT AREA */}
             <div className="flex-1 overflow-y-auto p-4 bg-gray-50/50">
                 {messages.length === 0 ? (
-                    <WelcomeState />
+                    <WelcomeState onSend={handleSend} />
                 ) : (
                     <div className="space-y-5 max-w-3xl mx-auto pb-4">
                         {messages.map((msg, i) => (
                             <MessageBubble key={i} msg={msg} index={i} />
                         ))}
-                        {isLoading && <LoadingBubble />}
+                        {isLoading && <LoadingBubble status={loadingStatus} />}
                         <div ref={messagesEndRef} />
                     </div>
                 )}
@@ -277,7 +281,7 @@ export default function KasBotChat() {
                 {/* Loading ref when in welcome state */}
                 {messages.length === 0 && isLoading && (
                     <div className="max-w-3xl mx-auto pb-4">
-                        <LoadingBubble />
+                        <LoadingBubble status={loadingStatus} />
                         <div ref={messagesEndRef} />
                     </div>
                 )}
