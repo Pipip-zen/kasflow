@@ -255,8 +255,8 @@ const BillDetail: React.FC = () => {
         }
 
         return (
-            <div className="overflow-x-auto -mx-4 px-4 w-full max-w-full" style={{ WebkitOverflowScrolling: 'touch' }}>
-                <Table className="min-w-[500px] w-full">
+            <div className="w-full overflow-x-auto overflow-y-hidden [-webkit-overflow-scrolling:touch]">
+                <Table className="min-w-[500px]">
                     <TableHeader>
                         <TableRow>
                             <TableHead className="whitespace-nowrap">Nama Anggota</TableHead>
@@ -314,23 +314,23 @@ const BillDetail: React.FC = () => {
             </Button>
 
             {/* Header Info */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-start gap-4 p-4 md:p-6 bg-white border rounded-xl shadow-sm w-full max-w-full overflow-hidden">
-                <div className="space-y-1">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-4 p-4 md:p-6 bg-white border rounded-xl shadow-sm w-full overflow-hidden items-start">
+                <div className="space-y-1 min-w-0 md:col-span-8">
                     <div className="flex items-center gap-3">
-                        <h1 className="text-2xl font-bold tracking-tight">{bill.judul}</h1>
-                        <Badge variant={getBadgeVariant(bill.status) as any} className={bill.status === 'active' ? 'bg-blue-100 text-blue-800' : ''}>
+                        <h1 className="text-xl sm:text-2xl font-bold truncate">{bill.judul}</h1>
+                        <Badge variant={getBadgeVariant(bill.status) as any} className={bill.status === 'active' ? 'bg-blue-100 text-blue-800 shrink-0' : 'shrink-0'}>
                             {bill.status.toUpperCase()}
                         </Badge>
                     </div>
-                    <p className="text-muted-foreground font-medium text-sm flex items-center gap-2">
-                        Grup: <span className="text-slate-800">{bill.groups?.nama}</span>
+                    <p className="flex flex-wrap gap-2 text-sm text-gray-500">
+                        Grup: <span className="text-slate-800 line-clamp-1">{bill.groups?.nama}</span>
                         <span className="text-slate-300">|</span>
-                        Deadline: <span className="text-slate-800">{new Date(bill.deadline).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                        <span className="truncate">Deadline: <span className="text-slate-800">{new Date(bill.deadline).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</span></span>
                     </p>
                 </div>
 
                 {/* Desktop Action Buttons */}
-                <div className="hidden md:flex gap-2">
+                <div className="hidden md:flex gap-2 md:col-span-4 justify-end flex-wrap">
                     {bill.status === 'draft' && (
                         <>
                             <Dialog open={openEdit} onOpenChange={setOpenEdit}>
@@ -412,30 +412,30 @@ const BillDetail: React.FC = () => {
             </div>
 
             {/* Progress Section */}
-            <Card className="bg-gradient-to-br from-green-50 to-white border-green-100 w-full max-w-full overflow-hidden">
-                <CardContent className="p-4 md:p-6">
-                    <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-4 gap-3">
-                        <div className="w-full md:w-auto overflow-hidden">
-                            <p className="text-xs md:text-sm font-medium text-green-800 mb-1 truncate">Total Kas Terkumpul</p>
+            <Card className="bg-gradient-to-br from-green-50 to-white border-green-100">
+                <CardContent className="p-4 sm:p-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end mb-4">
+                        <div className="min-w-0">
+                            <p className="text-xs sm:text-sm text-gray-500 mb-1 truncate">Total Kas Terkumpul</p>
                             <div className="flex items-baseline gap-2 flex-wrap">
-                                <span className="text-xl md:text-2xl font-bold text-slate-900 truncate">{formatCurrency(totalTerkumpul)}</span>
-                                <span className="text-xs md:text-sm text-slate-500 font-medium truncate">/ {formatCurrency(totalPotensi)}</span>
+                                <span className="text-2xl sm:text-3xl font-bold text-slate-900 truncate">{formatCurrency(totalTerkumpul)}</span>
+                                <span className="text-xs sm:text-sm text-slate-500 font-medium truncate">/ {formatCurrency(totalPotensi)}</span>
                             </div>
                         </div>
-                        <div className="md:text-right w-full md:w-auto overflow-hidden">
-                            <p className="text-xs md:text-sm font-medium text-slate-600 mb-1 truncate">Target Anggota</p>
-                            <p className="text-base md:text-lg font-bold text-slate-900 truncate">{bill.paid_count} <span className="text-xs md:text-sm font-normal text-muted-foreground">dari {bill.total_members} Lunas</span></p>
+                        <div className="sm:text-right min-w-0">
+                            <p className="text-xs sm:text-sm text-gray-500 mb-1 truncate">Target Anggota</p>
+                            <p className="text-xl sm:text-2xl font-bold text-slate-900 truncate">{bill.paid_count} <span className="text-xs sm:text-sm font-normal text-muted-foreground">dari {bill.total_members} Lunas</span></p>
                         </div>
                     </div>
-                    <Progress value={bill.progress} className="h-2 md:h-3 bg-green-200/50" />
+                    <Progress value={bill.progress} className="w-full h-2 rounded-full overflow-hidden bg-green-200/50" />
                 </CardContent>
             </Card>
 
             {/* Table Section */}
-            <Card className="w-full max-w-full overflow-hidden">
+            <Card>
                 <CardHeader>
                     <CardTitle>Rincian Pembayaran</CardTitle>
-                    <CardDescription>
+                    <CardDescription className="line-clamp-2">
                         Pantau status pembayaran setiap anggota secara real-time.
                     </CardDescription>
                 </CardHeader>
@@ -465,14 +465,14 @@ const BillDetail: React.FC = () => {
             </Card>
 
             {/* Mobile Action Buttons (Sticky Bottom) */}
-            <div className="md:hidden fixed bottom-0 left-0 right-0 p-4 bg-white border-t flex flex-col gap-2 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-10">
+            <div className="md:hidden fixed bottom-0 left-0 right-0 p-4 bg-white border-t flex flex-col gap-2 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-10 w-full overflow-hidden">
                 {bill.status === 'draft' && (
-                    <>
+                    <div className="flex flex-col gap-2 w-full">
                         {/* Note: The physical dialog component logic is rendered once at the top in Desktop but triggering from multiple places works best if we pull it up or duplicate. Since we are using DialogTrigger wrapping simple buttons, duplicating the Trigger code logic inside the same Dialog wrapper might be complex, so we'll just duplicate the Dialog structure entirely for mobile */}
                         <Dialog open={openEdit} onOpenChange={setOpenEdit}>
                             <DialogTrigger asChild>
-                                <Button variant="outline" className="w-full text-slate-600">
-                                    <Edit className="w-4 h-4 mr-2" /> Edit Tagihan
+                                <Button variant="outline" className="w-full text-slate-600 block truncate">
+                                    <Edit className="w-4 h-4 mr-2 inline" /> Edit Tagihan
                                 </Button>
                             </DialogTrigger>
                             <DialogContent className="sm:max-w-[425px]">
@@ -523,26 +523,26 @@ const BillDetail: React.FC = () => {
                             </DialogContent>
                         </Dialog>
 
-                        <Button onClick={() => setOpenConfirmActivate(true)} disabled={isUpdatingStatus || bill.total_members === 0} className="bg-blue-600 hover:bg-blue-700 w-full">
-                            <PlayCircle className="w-4 h-4 mr-2" /> Aktifkan & Kirim Email
+                        <Button onClick={() => setOpenConfirmActivate(true)} disabled={isUpdatingStatus || bill.total_members === 0} className="w-full bg-blue-600 hover:bg-blue-700 block truncate">
+                            <PlayCircle className="w-4 h-4 mr-2 inline" /> Aktifkan & Kirim Email
                         </Button>
-                    </>
+                    </div>
                 )}
 
                 {(bill.status === 'active' || bill.status === 'draft') && (
-                    <Button variant="outline" className="w-full border-green-600 text-green-700 hover:bg-green-50" onClick={() => setOpenConfirmRemind(true)} disabled={isUpdatingStatus || bill.total_members === 0}>
-                        <MessageCircle className="w-4 h-4 mr-2" /> Kirim Pengingat Email
+                    <Button variant="outline" className="w-full border-green-600 text-green-700 hover:bg-green-50 block truncate" onClick={() => setOpenConfirmRemind(true)} disabled={isUpdatingStatus || bill.total_members === 0}>
+                        <MessageCircle className="w-4 h-4 mr-2 inline" /> Kirim Pengingat Email
                     </Button>
                 )}
 
                 {bill.status === 'active' && (
-                    <Button onClick={() => setOpenConfirmClose(true)} disabled={isUpdatingStatus} variant="secondary" className="w-full">
-                        <StopCircle className="w-4 h-4 mr-2" /> Tutup Tagihan
+                    <Button onClick={() => setOpenConfirmClose(true)} disabled={isUpdatingStatus} variant="secondary" className="w-full block truncate">
+                        <StopCircle className="w-4 h-4 mr-2 inline" /> Tutup Tagihan
                     </Button>
                 )}
 
-                <Button onClick={() => setOpenDeleteAlert(true)} variant="ghost" className="w-full text-red-600 hover:bg-red-50 hover:text-red-700 pointer-events-auto">
-                    <Trash2 className="w-4 h-4 mr-2" /> Hapus Tagihan
+                <Button onClick={() => setOpenDeleteAlert(true)} variant="ghost" className="w-full text-red-600 hover:bg-red-50 hover:text-red-700 pointer-events-auto block truncate">
+                    <Trash2 className="w-4 h-4 mr-2 inline" /> Hapus Tagihan
                 </Button>
             </div>
 
