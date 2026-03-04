@@ -38,8 +38,9 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, CheckCircle2, XCircle, MessageCircle, PlayCircle, StopCircle, UserX, Edit, Trash2 } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, XCircle, MessageCircle, PlayCircle, StopCircle, UserX, Edit, Trash2, Mail, Bell } from 'lucide-react';
 import { toast } from 'sonner';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 
 type PaymentWithMember = Payment & { members: Member };
 type BillExtended = Bill & { total_members: number, paid_count: number, progress: number };
@@ -76,17 +77,18 @@ const BillDetail: React.FC = () => {
         }
     };
 
-    const handleUpdateStatus = async (status: 'active' | 'closed') => {
+    const [openConfirmClose, setOpenConfirmClose] = useState(false);
+    const [openConfirmActivate, setOpenConfirmActivate] = useState(false);
+    const [openConfirmRemind, setOpenConfirmRemind] = useState(false);
+
+    const executeUpdateStatusClosed = async () => {
         if (!bill) return;
-
-        // Safety Prompts
-        if (status === 'closed' && !window.confirm("Tutup tagihan ini? Anggota tidak akan bisa membayar lagi via link payment.")) return;
-
         setIsUpdatingStatus(true);
         try {
-            await api.updateBillStatus(bill.id, status);
-            setBill({ ...bill, status });
+            await api.updateBillStatus(bill.id, 'closed');
+            setBill({ ...bill, status: 'closed' });
             toast.success("Status tagihan berhasil ditutup.");
+            setOpenConfirmClose(false);
         } catch (error) {
             console.error("Failed to update status", error);
             toast.error("Gagal merubah status tagihan.");
@@ -95,9 +97,8 @@ const BillDetail: React.FC = () => {
         }
     };
 
-    const handleActivateTagihan = async () => {
+    const executeActivateTagihan = async () => {
         if (!bill) return;
-        if (!window.confirm("Aktifkan tagihan ini? Sistem akan mengirimkan pesan Email ke semua anggota secara otomatis.")) return;
 
         setIsUpdatingStatus(true);
         toast.loading("Memproses dan mengirimkan pesan Email...", { id: 'activate-bill' });
@@ -114,6 +115,7 @@ const BillDetail: React.FC = () => {
                 id: 'activate-bill',
                 description: result.failed.length > 0 ? `Gagal mengirim ke: ${result.failed.join(', ')}` : undefined
             });
+            setOpenConfirmActivate(false);
         } catch (error) {
             console.error("Failed to activate bill", error);
             toast.error("Gagal mengaktifkan tagihan.", { id: 'activate-bill' });
@@ -122,9 +124,8 @@ const BillDetail: React.FC = () => {
         }
     };
 
-    const handleRemindTagihan = async () => {
+    const executeRemindTagihan = async () => {
         if (!bill) return;
-        if (!window.confirm("Kirim ulang pengingat Email ke anggota yang BELUM terbayar?")) return;
 
         setIsUpdatingStatus(true);
         toast.loading("Mengirimkan pengingat Email...", { id: 'remind-bill' });
@@ -132,6 +133,7 @@ const BillDetail: React.FC = () => {
         try {
             const result = await api.remindBill(bill.id);
             toast.success(`Pengingat Email berhasil terkirim ke ${result.total_sent} anggota.`, { id: 'remind-bill' });
+            setOpenConfirmRemind(false);
         } catch (error) {
             console.error("Failed to send reminder", error);
             toast.error("Gagal mengirimkan pengingat Email.", { id: 'remind-bill' });
@@ -390,20 +392,20 @@ const BillDetail: React.FC = () => {
                                 </DialogContent>
                             </Dialog>
 
-                            <Button onClick={handleActivateTagihan} disabled={isUpdatingStatus || bill.total_members === 0} className="bg-blue-600 hover:bg-blue-700">
+                            <Button onClick={() => setOpenConfirmActivate(true)} disabled={isUpdatingStatus || bill.total_members === 0} className="bg-blue-600 hover:bg-blue-700">
                                 <PlayCircle className="w-4 h-4 mr-2" /> Aktifkan & Kirim Email
                             </Button>
                         </>
                     )}
 
                     {(bill.status === 'active' || bill.status === 'draft') && (
-                        <Button variant="outline" className="border-green-600 text-green-700 hover:bg-green-50" onClick={handleRemindTagihan} disabled={isUpdatingStatus || bill.total_members === 0}>
+                        <Button variant="outline" className="border-green-600 text-green-700 hover:bg-green-50" onClick={() => setOpenConfirmRemind(true)} disabled={isUpdatingStatus || bill.total_members === 0}>
                             <MessageCircle className="w-4 h-4 mr-2" /> Kirim Pengingat Email
                         </Button>
                     )}
 
                     {bill.status === 'active' && (
-                        <Button onClick={() => handleUpdateStatus('closed')} disabled={isUpdatingStatus} variant="secondary">
+                        <Button onClick={() => setOpenConfirmClose(true)} disabled={isUpdatingStatus} variant="secondary">
                             <StopCircle className="w-4 h-4 mr-2" /> Tutup Tagihan
                         </Button>
                     )}
@@ -543,20 +545,20 @@ const BillDetail: React.FC = () => {
                             </DialogContent>
                         </Dialog>
 
-                        <Button onClick={handleActivateTagihan} disabled={isUpdatingStatus || bill.total_members === 0} className="bg-blue-600 hover:bg-blue-700 w-full">
+                        <Button onClick={() => setOpenConfirmActivate(true)} disabled={isUpdatingStatus || bill.total_members === 0} className="bg-blue-600 hover:bg-blue-700 w-full">
                             <PlayCircle className="w-4 h-4 mr-2" /> Aktifkan & Kirim Email
                         </Button>
                     </>
                 )}
 
                 {(bill.status === 'active' || bill.status === 'draft') && (
-                    <Button variant="outline" className="w-full border-green-600 text-green-700 hover:bg-green-50" onClick={handleRemindTagihan} disabled={isUpdatingStatus || bill.total_members === 0}>
+                    <Button variant="outline" className="w-full border-green-600 text-green-700 hover:bg-green-50" onClick={() => setOpenConfirmRemind(true)} disabled={isUpdatingStatus || bill.total_members === 0}>
                         <MessageCircle className="w-4 h-4 mr-2" /> Kirim Pengingat Email
                     </Button>
                 )}
 
                 {bill.status === 'active' && (
-                    <Button onClick={() => handleUpdateStatus('closed')} disabled={isUpdatingStatus} variant="secondary" className="w-full">
+                    <Button onClick={() => setOpenConfirmClose(true)} disabled={isUpdatingStatus} variant="secondary" className="w-full">
                         <StopCircle className="w-4 h-4 mr-2" /> Tutup Tagihan
                     </Button>
                 )}
@@ -585,6 +587,39 @@ const BillDetail: React.FC = () => {
                 </AlertDialog>
             </div>
 
+            {/* Dialog Confirmations */}
+            <ConfirmDialog
+                open={openConfirmActivate}
+                onOpenChange={setOpenConfirmActivate}
+                title="Aktifkan Tagihan?"
+                description="Sistem akan mengirimkan notifikasi Email ke semua anggota secara otomatis. Tagihan yang sudah diaktifkan tidak dapat diedit."
+                icon={<Mail className="h-6 w-6 text-green-600" />}
+                confirmText="Aktifkan & Kirim Email"
+                confirmVariant="default"
+                onConfirm={executeActivateTagihan}
+                loading={isUpdatingStatus}
+            />
+            <ConfirmDialog
+                open={openConfirmRemind}
+                onOpenChange={setOpenConfirmRemind}
+                title="Kirim Ulang Notifikasi?"
+                description={`Email pengingat akan dikirim ke ${payments.filter(p => p.status === 'pending').length} anggota yang belum melakukan pembayaran.`}
+                icon={<Bell className="h-6 w-6 text-amber-500" />}
+                confirmText="Kirim Ulang"
+                confirmVariant="default"
+                onConfirm={executeRemindTagihan}
+                loading={isUpdatingStatus}
+            />
+            <ConfirmDialog
+                open={openConfirmClose}
+                onOpenChange={setOpenConfirmClose}
+                title="Tutup Tagihan?"
+                description="Anggota tidak akan bisa membayar lagi via link payment karena statusnya akan diubah menjadi selesai/ditutup."
+                confirmText="Tutup Tagihan"
+                confirmVariant="destructive"
+                onConfirm={executeUpdateStatusClosed}
+                loading={isUpdatingStatus}
+            />
         </div>
     );
 };

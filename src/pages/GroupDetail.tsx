@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api, type Group, type Member } from '../lib/api';
 import { toast } from 'sonner';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -88,17 +89,26 @@ const GroupDetail: React.FC = () => {
         }
     };
 
-    const handleDeleteMember = async (memberId: string, name: string) => {
-        if (window.confirm(`Hapus anggota '${name}' dari grup ini? Semua data pembayarannya akan ikut terhapus.`)) {
-            toast.loading(`Menghapus ${name}...`, { id: 'del-member' });
-            try {
-                await api.deleteMember(memberId);
-                setMembers(members.filter(m => m.id !== memberId));
-                toast.success(`${name} berhasil dihapus dari grup.`, { id: 'del-member' });
-            } catch (error) {
-                console.error("Failed to delete member:", error);
-                toast.error("Gagal menghapus anggota.", { id: 'del-member' });
-            }
+    const [openConfirmDeleteMember, setOpenConfirmDeleteMember] = useState(false);
+    const [memberToDelete, setMemberToDelete] = useState<{ id: string, name: string } | null>(null);
+
+    const promptDeleteMember = (id: string, name: string) => {
+        setMemberToDelete({ id, name });
+        setOpenConfirmDeleteMember(true);
+    };
+
+    const executeDeleteMember = async () => {
+        if (!memberToDelete) return;
+        const { id, name } = memberToDelete;
+        toast.loading(`Menghapus ${name}...`, { id: 'del-member' });
+        try {
+            await api.deleteMember(id);
+            setMembers(members.filter(m => m.id !== id));
+            toast.success(`${name} berhasil dihapus dari grup.`, { id: 'del-member' });
+            setOpenConfirmDeleteMember(false);
+        } catch (error) {
+            console.error("Failed to delete member:", error);
+            toast.error("Gagal menghapus anggota.", { id: 'del-member' });
         }
     };
 
@@ -226,7 +236,7 @@ const GroupDetail: React.FC = () => {
                                                     variant="ghost"
                                                     size="icon"
                                                     className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                                                    onClick={() => handleDeleteMember(member.id, member.nama)}
+                                                    onClick={() => promptDeleteMember(member.id, member.nama)}
                                                     title="Hapus Anggota"
                                                 >
                                                     <UserX className="h-4 w-4" />
@@ -240,6 +250,15 @@ const GroupDetail: React.FC = () => {
                     </CardContent>
                 </Card>
             </div>
+            <ConfirmDialog
+                open={openConfirmDeleteMember}
+                onOpenChange={setOpenConfirmDeleteMember}
+                title="Hapus Anggota?"
+                description={`Hapus anggota '${memberToDelete?.name}' dari grup ini? Semua data pembayarannya akan ikut terhapus.`}
+                confirmText="Ya, Hapus"
+                confirmVariant="destructive"
+                onConfirm={executeDeleteMember}
+            />
         </div>
     );
 };
