@@ -77,7 +77,7 @@ export const DashboardLayout: React.FC = () => {
     );
 
     return (
-        <div className="grid min-h-screen w-full lg:grid-cols-[240px_1fr]">
+        <div className="grid min-h-screen w-full lg:grid-cols-[240px_1fr] overflow-x-hidden">
             {/* Desktop Sidebar */}
             <aside className="hidden lg:block">
                 <SidebarContent />

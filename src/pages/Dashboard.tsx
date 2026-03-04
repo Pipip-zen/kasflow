@@ -157,40 +157,42 @@ const Dashboard: React.FC = () => {
                                         Belum ada tagihan. Buat tagihan pertama Anda di halaman Grup.
                                     </div>
                                 ) : (
-                                    <Table>
-                                        <TableHeader>
-                                            <TableRow>
-                                                <TableHead>Judul</TableHead>
-                                                <TableHead>Grup</TableHead>
-                                                <TableHead>Nominal</TableHead>
-                                                <TableHead>Progress</TableHead>
-                                                <TableHead>Status</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {recentBills.map((bill: any) => (
-                                                <TableRow key={bill.id}>
-                                                    <TableCell className="font-medium">{bill.judul}</TableCell>
-                                                    <TableCell>{bill.groups?.nama || '-'}</TableCell>
-                                                    <TableCell>{formatCurrency(bill.nominal)}</TableCell>
-                                                    <TableCell>
-                                                        <div className="flex items-center gap-2 w-full max-w-[120px]">
-                                                            <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                                                                <div
-                                                                    className="h-full bg-green-500"
-                                                                    style={{ width: `${bill.progress || 0}%` }}
-                                                                />
-                                                            </div>
-                                                            <span className="text-xs text-muted-foreground font-medium">{bill.progress || 0}%</span>
-                                                        </div>
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        {getStatusBadge(bill.status)}
-                                                    </TableCell>
+                                    <div className="overflow-x-auto w-full">
+                                        <Table>
+                                            <TableHeader>
+                                                <TableRow>
+                                                    <TableHead>Judul</TableHead>
+                                                    <TableHead>Grup</TableHead>
+                                                    <TableHead>Nominal</TableHead>
+                                                    <TableHead>Progress</TableHead>
+                                                    <TableHead>Status</TableHead>
                                                 </TableRow>
-                                            ))}
-                                        </TableBody>
-                                    </Table>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {recentBills.map((bill: any) => (
+                                                    <TableRow key={bill.id}>
+                                                        <TableCell className="font-medium whitespace-nowrap">{bill.judul}</TableCell>
+                                                        <TableCell className="whitespace-nowrap">{bill.groups?.nama || '-'}</TableCell>
+                                                        <TableCell className="whitespace-nowrap">{formatCurrency(bill.nominal)}</TableCell>
+                                                        <TableCell>
+                                                            <div className="flex items-center gap-2 w-full max-w-[120px]">
+                                                                <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                                                                    <div
+                                                                        className="h-full bg-green-500"
+                                                                        style={{ width: `${bill.progress || 0}%` }}
+                                                                    />
+                                                                </div>
+                                                                <span className="text-xs text-muted-foreground font-medium">{bill.progress || 0}%</span>
+                                                            </div>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            {getStatusBadge(bill.status)}
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    </div>
                                 )}
                             </CardContent>
                         </Card>
