@@ -375,7 +375,7 @@ export const api = {
 
         let totalSent = 0;
         const failedList: string[] = [];
-        const appUrl = import.meta.env.VITE_APP_URL || window.location.origin;
+        const appUrl = (import.meta.env.VITE_APP_URL || window.location.origin).replace(/\/$/, '');
 
         if (payments && payments.length > 0) {
             for (const p of payments) {
@@ -454,7 +454,7 @@ export const api = {
         if (payError) throw payError;
 
         let totalSent = 0;
-        const appUrl = import.meta.env.VITE_APP_URL || window.location.origin;
+        const appUrl = (import.meta.env.VITE_APP_URL || window.location.origin).replace(/\/$/, '');
 
         if (payments && payments.length > 0) {
             for (const p of payments) {
