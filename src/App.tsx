@@ -10,6 +10,7 @@ import GroupDetail from './pages/GroupDetail';
 import Bills from './pages/Bills';
 import BillDetail from './pages/BillDetail';
 import PublicPayment from './pages/PublicPayment';
+import NotFound from './pages/NotFound';
 import { Toaster } from "@/components/ui/sonner"
 
 function App() {
@@ -23,7 +24,6 @@ function App() {
           <Route path="/auth" element={<Auth />} />
           <Route path="/pay/:token" element={<PublicPayment />} />
 
-          {/* Protected Routes directly connected to Layout */}
           <Route element={<ProtectedRoute />}>
             <Route element={<DashboardLayout />}>
               <Route path="/dashboard" element={<Dashboard />} />
@@ -33,6 +33,9 @@ function App() {
               <Route path="/groups/:id" element={<GroupDetail />} />
             </Route>
           </Route>
+
+          {/* Catch-all 404 Route */}
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </div>
     </AuthProvider>

@@ -16,7 +16,7 @@ import {
     TableHeader,
     TableRow,
 } from "../components/ui/table"
-import { ArrowLeft, CheckCircle2, XCircle, MessageCircle, PlayCircle, StopCircle } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, XCircle, MessageCircle, PlayCircle, StopCircle, UserX } from 'lucide-react';
 import { toast } from 'sonner';
 
 type PaymentWithMember = Payment & { members: Member };
@@ -135,9 +135,26 @@ const BillDetail: React.FC = () => {
     };
 
     const renderTable = (filter: 'all' | 'paid' | 'pending') => {
+        if (!bill) return null;
+
         let filtered = payments;
         if (filter !== 'all') {
             filtered = payments.filter(p => p.status === filter);
+        }
+
+        if (bill.total_members === 0) {
+            return (
+                <div className="text-center py-10 border border-dashed rounded-lg bg-slate-50 flex flex-col items-center justify-center">
+                    <UserX className="w-10 h-10 text-slate-400 mb-3" />
+                    <h3 className="text-lg font-medium text-slate-900">Grup Kosong</h3>
+                    <p className="text-sm text-slate-500 max-w-sm mx-auto mt-1 mb-4">
+                        Grup tagihan ini belum memiliki anggota. Silakan tambahkan anggota di halaman Grup.
+                    </p>
+                    <Button onClick={() => navigate(`/groups/${bill.group_id}`)} variant="outline">
+                        Kelola Grup
+                    </Button>
+                </div>
+            );
         }
 
         if (filtered.length === 0) {
@@ -224,13 +241,13 @@ const BillDetail: React.FC = () => {
                 {/* Desktop Action Buttons */}
                 <div className="hidden md:flex gap-2">
                     {bill.status === 'draft' && (
-                        <Button onClick={handleActivateTagihan} disabled={isUpdatingStatus} className="bg-blue-600 hover:bg-blue-700">
+                        <Button onClick={handleActivateTagihan} disabled={isUpdatingStatus || bill.total_members === 0} className="bg-blue-600 hover:bg-blue-700">
                             <PlayCircle className="w-4 h-4 mr-2" /> Aktifkan & Kirim Email
                         </Button>
                     )}
 
                     {(bill.status === 'active' || bill.status === 'draft') && (
-                        <Button variant="outline" className="border-green-600 text-green-700 hover:bg-green-50" onClick={handleRemindTagihan} disabled={isUpdatingStatus}>
+                        <Button variant="outline" className="border-green-600 text-green-700 hover:bg-green-50" onClick={handleRemindTagihan} disabled={isUpdatingStatus || bill.total_members === 0}>
                             <MessageCircle className="w-4 h-4 mr-2" /> Kirim Pengingat Email
                         </Button>
                     )}
@@ -297,13 +314,13 @@ const BillDetail: React.FC = () => {
             {/* Mobile Action Buttons (Sticky Bottom) */}
             <div className="md:hidden fixed bottom-0 left-0 right-0 p-4 bg-white border-t flex flex-col gap-2 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-10">
                 {bill.status === 'draft' && (
-                    <Button onClick={handleActivateTagihan} disabled={isUpdatingStatus} className="bg-blue-600 hover:bg-blue-700 w-full">
+                    <Button onClick={handleActivateTagihan} disabled={isUpdatingStatus || bill.total_members === 0} className="bg-blue-600 hover:bg-blue-700 w-full">
                         <PlayCircle className="w-4 h-4 mr-2" /> Aktifkan & Kirim Email
                     </Button>
                 )}
 
                 {(bill.status === 'active' || bill.status === 'draft') && (
-                    <Button variant="outline" className="w-full border-green-600 text-green-700 hover:bg-green-50" onClick={handleRemindTagihan} disabled={isUpdatingStatus}>
+                    <Button variant="outline" className="w-full border-green-600 text-green-700 hover:bg-green-50" onClick={handleRemindTagihan} disabled={isUpdatingStatus || bill.total_members === 0}>
                         <MessageCircle className="w-4 h-4 mr-2" /> Kirim Pengingat Email
                     </Button>
                 )}
