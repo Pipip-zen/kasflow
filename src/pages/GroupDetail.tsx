@@ -114,6 +114,7 @@ const GroupDetail: React.FC = () => {
 
     const [openConfirmDeleteGroup, setOpenConfirmDeleteGroup] = useState(false);
     const [isDeletingGroup, setIsDeletingGroup] = useState(false);
+    const [confirmGroupName, setConfirmGroupName] = useState('');
 
     const handleDeleteGroup = async () => {
         if (!id || !group) return;
@@ -287,16 +288,57 @@ const GroupDetail: React.FC = () => {
                 onConfirm={executeDeleteMember}
             />
 
-            <ConfirmDialog
-                open={openConfirmDeleteGroup}
-                onOpenChange={setOpenConfirmDeleteGroup}
-                title="Hapus Grup?"
-                description={`Tindakan ini permanen. Semua data tagihan, anggota, dan riwayat di dalam grup "${group?.nama}" akan terhapus total.`}
-                confirmText="Ya, Hapus Grup"
-                confirmVariant="destructive"
-                onConfirm={handleDeleteGroup}
-                loading={isDeletingGroup}
-            />
+            <Dialog open={openConfirmDeleteGroup} onOpenChange={setOpenConfirmDeleteGroup}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="text-red-600 flex items-center gap-2">
+                            <Trash2 className="w-5 h-5" /> Hapus Grup?
+                        </DialogTitle>
+                        <DialogDescription className="pt-2">
+                            Tindakan ini permanen. Semua data tagihan, anggota, dan riwayat di dalam grup <strong>"{group?.nama}"</strong> akan terhapus total.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="py-4">
+                        <Label htmlFor="confirm-group-name" className="text-sm font-medium text-slate-700">
+                            Ketik nama grup untuk konfirmasi:
+                        </Label>
+                        <p className="text-xs text-muted-foreground mb-2 font-mono bg-slate-100 p-1.5 rounded inline-block">
+                            {group?.nama}
+                        </p>
+                        <Input
+                            id="confirm-group-name"
+                            placeholder="Ketik nama grup di sini..."
+                            value={confirmGroupName}
+                            onChange={(e) => setConfirmGroupName(e.target.value)}
+                            className={`mt-1 ${confirmGroupName === group?.nama ? 'border-green-500 focus-visible:ring-green-500' : 'border-red-200 focus-visible:ring-red-500'}`}
+                            autoComplete="off"
+                        />
+                    </div>
+
+                    <DialogFooter className="sm:justify-between">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => {
+                                setOpenConfirmDeleteGroup(false);
+                                setConfirmGroupName('');
+                            }}
+                        >
+                            Batal
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="destructive"
+                            onClick={handleDeleteGroup}
+                            disabled={isDeletingGroup || confirmGroupName !== group?.nama}
+                        >
+                            {isDeletingGroup ? 'Menghapus...' : 'Ya, Hapus Grup'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
         </div>
     );
 };
