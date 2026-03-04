@@ -41,20 +41,10 @@ const AuthCallback: React.FC = () => {
                     });
 
                     if (sessionError) throw sessionError;
-
-                    toast.success("Email berhasil diverifikasi! Selamat datang 🎉", {
-                        duration: 5000,
-                        id: 'email-verify-success' // Unique ID avoids stacking
-                    });
                 } else if (code) {
                     // PKCE flow
                     const { error: codeError } = await supabase.auth.exchangeCodeForSession(code);
                     if (codeError) throw codeError;
-
-                    toast.success("Email berhasil diverifikasi! Selamat datang 🎉", {
-                        duration: 5000,
-                        id: 'email-verify-success'
-                    });
                 } else {
                     // Fallback to checking existing active session status (e.g. from Auto-verification)
                     const { data: { session } } = await supabase.auth.getSession();
@@ -72,7 +62,7 @@ const AuthCallback: React.FC = () => {
                 // Bug 3: Final redirect logic based on session state 
                 const { data: { session } } = await supabase.auth.getSession();
                 if (session) {
-                    navigate('/dashboard', { replace: true });
+                    navigate('/dashboard?verified=true', { replace: true });
                 } else {
                     navigate('/auth', { replace: true });
                 }

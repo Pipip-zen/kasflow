@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { toast } from 'sonner';
 import { api, type Bill } from '../lib/api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,9 +20,20 @@ import { Users, FileText, Wallet, UsersRound } from 'lucide-react';
 const Dashboard: React.FC = () => {
     const { user } = useAuth();
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const [stats, setStats] = useState({ totalGroups: 0, totalBills: 0, totalCash: 0, totalMembers: 0 });
     const [recentBills, setRecentBills] = useState<Bill[]>([]);
     const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        if (searchParams.get('verified') === 'true') {
+            toast.success('Email berhasil diverifikasi! 🎉', {
+                description: 'Selamat datang di KasFlow!',
+                duration: 5000,
+            });
+            navigate('/dashboard', { replace: true });
+        }
+    }, [searchParams, navigate]);
 
     useEffect(() => {
         const fetchData = async () => {
