@@ -11,13 +11,18 @@ import Bills from './pages/Bills';
 import BillDetail from './pages/BillDetail';
 import PublicPayment from './pages/PublicPayment';
 import NotFound from './pages/NotFound';
-import { Toaster } from "@/components/ui/sonner"
+import { Toaster } from 'sonner';
 
 function App() {
   return (
     <AuthProvider>
       <div className="min-h-screen bg-background text-foreground flex flex-col items-center selection:bg-primary selection:text-primary-foreground w-full">
-        <Toaster />
+        <Toaster
+          position="bottom-right"
+          richColors
+          expand={true}
+          duration={3000}
+        />
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={<Landing />} />

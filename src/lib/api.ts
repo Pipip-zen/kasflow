@@ -342,6 +342,28 @@ export const api = {
         if (error) throw error;
     },
 
+    updateBill: async (billId: string, judul: string, nominal: number, deadline: string) => {
+        const { error } = await supabase
+            .from('bills')
+            .update({ judul, nominal, deadline })
+            .eq('id', billId)
+            // Safety check: Only allow updates on draft bills
+            .eq('status', 'draft');
+
+        if (error) throw error;
+    },
+
+    deleteBill: async (billId: string) => {
+        // Because we set up ON DELETE CASCADE in the database schema for payments,
+        // deleting the bill will automatically clean up the related payments.
+        const { error } = await supabase
+            .from('bills')
+            .delete()
+            .eq('id', billId);
+
+        if (error) throw error;
+    },
+
     getBillPayments: async (billId: string) => {
         // Get payments joined with member info
         const { data, error } = await supabase

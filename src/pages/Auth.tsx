@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
+import { toast } from 'sonner';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -22,7 +23,6 @@ import {
 
 const Auth: React.FC = () => {
     const [loading, setLoading] = useState(false);
-    const [errorMsg, setErrorMsg] = useState('');
 
     // Login State
     const [loginEmail, setLoginEmail] = useState('');
@@ -45,8 +45,8 @@ const Auth: React.FC = () => {
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
-        setErrorMsg('');
         setLoading(true);
+        toast.loading("Masuk ke akun...", { id: 'auth' });
 
         const { error } = await supabase.auth.signInWithPassword({
             email: loginEmail,
@@ -54,23 +54,25 @@ const Auth: React.FC = () => {
         });
 
         if (error) {
-            setErrorMsg(error.message);
+            toast.error(error.message, { id: 'auth' });
             setLoading(false);
         } else {
+            toast.success("Berhasil masuk!", { id: 'auth' });
             navigate('/dashboard');
         }
     };
 
     const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault();
-        setErrorMsg('');
         setLoading(true);
 
         if (!regName.trim()) {
-            setErrorMsg('Nama harus diisi');
+            toast.error('Nama harus diisi');
             setLoading(false);
             return;
         }
+
+        toast.loading("Mendaftarkan akun...", { id: 'auth' });
 
         const { data: authData, error: authError } = await supabase.auth.signUp({
             email: regEmail,
@@ -83,13 +85,12 @@ const Auth: React.FC = () => {
         });
 
         if (authError) {
-            setErrorMsg(authError.message);
+            toast.error(authError.message, { id: 'auth' });
             setLoading(false);
             return;
         }
 
         // Insert user strictly into public users table manually as fallback/guarantee.
-        // If auth trigger is configured on DB, this might fail gracefully on unique constraint.
         if (authData.user) {
             const { error: insertError } = await supabase
                 .from('users')
@@ -101,10 +102,10 @@ const Auth: React.FC = () => {
 
             if (insertError) {
                 console.error("Failed to insert into public.users table manually: ", insertError);
-                // Don't block the user if the auth actually succeeded
             }
         }
 
+        toast.success("Berhasil mendaftar akun!", { id: 'auth' });
         navigate('/dashboard');
     };
 
@@ -122,12 +123,6 @@ const Auth: React.FC = () => {
                 </CardHeader>
 
                 <CardContent>
-                    {errorMsg && (
-                        <div className="mb-4 p-3 rounded bg-red-50 text-red-600 text-sm border border-red-200 text-center">
-                            {errorMsg}
-                        </div>
-                    )}
-
                     <Tabs defaultValue="login" className="w-full">
                         <TabsList className="grid w-full grid-cols-2 mb-6">
                             <TabsTrigger value="login">Masuk</TabsTrigger>

@@ -1,20 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LayoutDashboard, Users, LogOut, Menu, Receipt } from 'lucide-react';
+import { LayoutDashboard, Users, LogOut, Menu, FileText } from 'lucide-react';
 import { Button } from './ui/button';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from './ui/dropdown-menu';
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from './ui/sheet';
 
 export const DashboardLayout: React.FC = () => {
     const { user, signOut } = useAuth();
     const navigate = useNavigate();
+    const [open, setOpen] = useState(false);
 
     const handleLogout = async () => {
         await signOut();
@@ -23,74 +17,93 @@ export const DashboardLayout: React.FC = () => {
 
     const navLinks = [
         { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-        { to: '/bills', label: 'Tagihan', icon: Receipt },
         { to: '/groups', label: 'Grup', icon: Users },
+        { to: '/bills', label: 'Tagihan', icon: FileText },
     ];
 
-    return (
-        <div className="flex min-h-screen w-full flex-col bg-muted/40">
-            {/* Top Navbar */}
-            <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6">
-                <div className="flex items-center gap-2 font-bold text-lg mr-4 text-green-700">
-                    <div className="w-8 h-8 rounded bg-green-600 text-white flex items-center justify-center text-xl">K</div>
-                    <span className="hidden md:inline">KasFlow</span>
+    const SidebarContent = () => (
+        <div className="flex h-full flex-col bg-background border-r">
+            <div className="flex h-16 items-center border-b px-6">
+                <div className="flex items-center gap-2 font-bold text-lg text-green-700">
+                    <div className="w-8 h-8 rounded bg-green-600 text-white flex items-center justify-center text-xl">
+                        K
+                    </div>
+                    <span>KasFlow</span>
                 </div>
-
-                {/* Desktop Navigation */}
-                <nav className="hidden md:flex flex-row gap-6 text-sm font-medium">
+            </div>
+            <div className="flex-1 overflow-auto py-4">
+                <nav className="grid gap-1 px-4">
                     {navLinks.map((link) => (
                         <NavLink
                             key={link.to}
                             to={link.to}
+                            onClick={() => setOpen(false)}
                             className={({ isActive }) =>
-                                `flex items-center gap-2 transition-colors hover:text-foreground ${isActive ? 'text-foreground font-semibold text-green-700' : 'text-muted-foreground'
+                                `flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:text-foreground hover:bg-muted ${isActive
+                                    ? 'bg-green-50 text-green-700 font-semibold dark:bg-green-900/20 dark:text-green-400'
+                                    : 'text-muted-foreground'
                                 }`
                             }
                         >
-                            <link.icon className="h-4 w-4" />
+                            <link.icon className="h-5 w-5" />
                             {link.label}
                         </NavLink>
                     ))}
                 </nav>
-
-                {/* Mobile Navigation (Dropdown) */}
-                <div className="md:hidden flex items-center">
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="outline" size="icon" className="shrink-0">
-                                <Menu className="h-5 w-5" />
-                                <span className="sr-only">Toggle navigation menu</span>
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="start">
-                            <DropdownMenuLabel>Menu</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            {navLinks.map((link) => (
-                                <DropdownMenuItem key={link.to} onClick={() => navigate(link.to)}>
-                                    <link.icon className="mr-2 h-4 w-4" />
-                                    {link.label}
-                                </DropdownMenuItem>
-                            ))}
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                </div>
-
-                {/* User Menu */}
-                <div className="ml-auto flex items-center gap-4">
-                    <span className="text-sm text-muted-foreground hidden sm:block">
-                        {user?.user_metadata?.nama || user?.email}
-                    </span>
-                    <Button variant="outline" size="sm" onClick={handleLogout} className="gap-2">
+            </div>
+            <div className="mt-auto border-t p-4">
+                <div className="flex flex-col gap-4">
+                    <div className="flex flex-col">
+                        <span className="text-sm font-medium leading-none">
+                            {user?.user_metadata?.nama || 'Pengguna'}
+                        </span>
+                        <span className="text-xs text-muted-foreground mt-1 truncate">
+                            {user?.email}
+                        </span>
+                    </div>
+                    <Button variant="outline" className="w-full justify-start gap-2" onClick={handleLogout}>
                         <LogOut className="h-4 w-4" />
-                        <span className="hidden sm:inline">Keluar</span>
+                        Keluar
                     </Button>
                 </div>
-            </header>
+            </div>
+        </div>
+    );
 
-            {/* Main Content Area */}
-            <main className="flex-1 flex flex-col p-4 md:p-8">
-                <Outlet />
-            </main>
+    return (
+        <div className="grid min-h-screen w-full lg:grid-cols-[240px_1fr]">
+            {/* Desktop Sidebar */}
+            <aside className="hidden lg:block">
+                <SidebarContent />
+            </aside>
+
+            {/* Main Content */}
+            <div className="flex flex-col">
+                {/* Mobile Header */}
+                <header className="flex h-16 items-center gap-4 border-b bg-background px-6 lg:hidden">
+                    <Sheet open={open} onOpenChange={setOpen}>
+                        <SheetTrigger asChild>
+                            <Button variant="outline" size="icon" className="shrink-0 lg:hidden">
+                                <Menu className="h-5 w-5" />
+                                <span className="sr-only">Toggle sidebar</span>
+                            </Button>
+                        </SheetTrigger>
+                        <SheetContent side="left" className="w-72 p-0 flex flex-col">
+                            <SheetTitle className="sr-only">Navigasi Kasflow</SheetTitle>
+                            <SidebarContent />
+                        </SheetContent>
+                    </Sheet>
+                    <div className="flex items-center gap-2 font-bold text-lg text-green-700">
+                        <div className="w-8 h-8 rounded bg-green-600 text-white flex items-center justify-center text-xl">K</div>
+                        <span>KasFlow</span>
+                    </div>
+                </header>
+
+                {/* Main Content Area */}
+                <main className="flex-1 bg-muted/40 p-4 md:p-8">
+                    <Outlet />
+                </main>
+            </div>
         </div>
     );
 };

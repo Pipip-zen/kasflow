@@ -16,7 +16,29 @@ import {
     TableHeader,
     TableRow,
 } from "../components/ui/table"
-import { ArrowLeft, CheckCircle2, XCircle, MessageCircle, PlayCircle, StopCircle, UserX } from 'lucide-react';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { ArrowLeft, CheckCircle2, XCircle, MessageCircle, PlayCircle, StopCircle, UserX, Edit, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 type PaymentWithMember = Payment & { members: Member };
@@ -115,6 +137,78 @@ const BillDetail: React.FC = () => {
             toast.error("Gagal mengirimkan pengingat Email.", { id: 'remind-bill' });
         } finally {
             setIsUpdatingStatus(false);
+        }
+    };
+
+    // --- Edit Bill logic ---
+    const [openEdit, setOpenEdit] = useState(false);
+    const [editJudul, setEditJudul] = useState('');
+    const [editNominalStr, setEditNominalStr] = useState('');
+    const [editDeadline, setEditDeadline] = useState('');
+    const [isEditing, setIsEditing] = useState(false);
+
+    // Populate edit form when opening
+    useEffect(() => {
+        if (openEdit && bill) {
+            setEditJudul(bill.judul);
+            setEditNominalStr(new Intl.NumberFormat('id-ID').format(bill.nominal));
+            setEditDeadline(bill.deadline);
+        }
+    }, [openEdit, bill]);
+
+    const handleEditNominalChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const val = e.target.value.replace(/\D/g, '');
+        if (val) {
+            setEditNominalStr(new Intl.NumberFormat('id-ID').format(parseInt(val, 10)));
+        } else {
+            setEditNominalStr('');
+        }
+    };
+
+    const handleEditBill = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!bill) return;
+
+        const nominalValue = parseInt(editNominalStr.replace(/\./g, ''), 10);
+        if (isNaN(nominalValue) || nominalValue <= 0) {
+            toast.error("Nominal tidak valid.");
+            return;
+        }
+
+        setIsEditing(true);
+        toast.loading("Menyimpan perubahan...", { id: 'edit-bill' });
+
+        try {
+            await api.updateBill(bill.id, editJudul, nominalValue, editDeadline);
+            // Re-fetch detail to be safe
+            await fetchDetail();
+            setOpenEdit(false);
+            toast.success("Perubahan tagihan berhasil disimpan!", { id: 'edit-bill' });
+        } catch (error) {
+            console.error("Failed to edit bill:", error);
+            toast.error("Gagal menyimpan perubahan. Pastikan status tagihan masih Draft.", { id: 'edit-bill' });
+        } finally {
+            setIsEditing(false);
+        }
+    };
+
+    // --- Delete Bill logic ---
+    const [isDeleting, setIsDeleting] = useState(false);
+    const handleDeleteBill = async () => {
+        if (!bill) return;
+
+        setIsDeleting(true);
+        toast.loading("Menghapus tagihan...", { id: 'delete-bill' });
+
+        try {
+            await api.deleteBill(bill.id);
+            toast.success("Tagihan berhasil dihapus.", { id: 'delete-bill' });
+            navigate('/bills');
+        } catch (error) {
+            console.error("Failed to delete bill:", error);
+            toast.error("Gagal menghapus tagihan.", { id: 'delete-bill' });
+        } finally {
+            setIsDeleting(false);
         }
     };
 
@@ -241,9 +335,65 @@ const BillDetail: React.FC = () => {
                 {/* Desktop Action Buttons */}
                 <div className="hidden md:flex gap-2">
                     {bill.status === 'draft' && (
-                        <Button onClick={handleActivateTagihan} disabled={isUpdatingStatus || bill.total_members === 0} className="bg-blue-600 hover:bg-blue-700">
-                            <PlayCircle className="w-4 h-4 mr-2" /> Aktifkan & Kirim Email
-                        </Button>
+                        <>
+                            <Dialog open={openEdit} onOpenChange={setOpenEdit}>
+                                <DialogTrigger asChild>
+                                    <Button variant="outline" className="text-slate-600">
+                                        <Edit className="w-4 h-4 mr-2" /> Edit
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent className="sm:max-w-[425px]">
+                                    <form onSubmit={handleEditBill}>
+                                        <DialogHeader>
+                                            <DialogTitle>Edit Tagihan</DialogTitle>
+                                            <DialogDescription>
+                                                Ubah detail tagihan. Tagihan yang sudah aktif tidak bisa diedit.
+                                            </DialogDescription>
+                                        </DialogHeader>
+                                        <div className="grid gap-4 py-4">
+                                            <div className="space-y-2">
+                                                <Label htmlFor="edit-judul">Judul Tagihan</Label>
+                                                <Input
+                                                    id="edit-judul"
+                                                    value={editJudul}
+                                                    onChange={(e) => setEditJudul(e.target.value)}
+                                                    required
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="edit-nominal">Nominal (Rp)</Label>
+                                                <Input
+                                                    id="edit-nominal"
+                                                    value={editNominalStr}
+                                                    onChange={handleEditNominalChange}
+                                                    required
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="edit-deadline">Tenggat Waktu</Label>
+                                                <Input
+                                                    id="edit-deadline"
+                                                    type="date"
+                                                    value={editDeadline}
+                                                    onChange={(e) => setEditDeadline(e.target.value)}
+                                                    required
+                                                />
+                                            </div>
+                                        </div>
+                                        <DialogFooter>
+                                            <Button type="button" variant="outline" onClick={() => setOpenEdit(false)}>Batal</Button>
+                                            <Button type="submit" disabled={isEditing} className="bg-green-600 hover:bg-green-700">
+                                                {isEditing ? 'Menyimpan...' : 'Simpan Perubahan'}
+                                            </Button>
+                                        </DialogFooter>
+                                    </form>
+                                </DialogContent>
+                            </Dialog>
+
+                            <Button onClick={handleActivateTagihan} disabled={isUpdatingStatus || bill.total_members === 0} className="bg-blue-600 hover:bg-blue-700">
+                                <PlayCircle className="w-4 h-4 mr-2" /> Aktifkan & Kirim Email
+                            </Button>
+                        </>
                     )}
 
                     {(bill.status === 'active' || bill.status === 'draft') && (
@@ -257,6 +407,29 @@ const BillDetail: React.FC = () => {
                             <StopCircle className="w-4 h-4 mr-2" /> Tutup Tagihan
                         </Button>
                     )}
+
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <Button variant="ghost" className="text-red-600 hover:bg-red-50 hover:text-red-700 pointer-events-auto">
+                                <Trash2 className="w-4 h-4" />
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Hapus Tagihan Secara Permanen?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    Tindakan ini tidak dapat dibatalkan. Menghapus tagihan juga akan menghapus <strong>seluruh data pembayaran</strong> dan link Mayar yang terkait.
+                                    {bill.status === 'active' && <span className="block mt-2 font-bold text-red-600">Peringatan: Tagihan ini sedang aktif!</span>}
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>Batal</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleDeleteBill} disabled={isDeleting} className="bg-red-600 hover:bg-red-700 focus:ring-red-600">
+                                    {isDeleting ? 'Menghapus...' : 'Ya, Hapus Tagihan'}
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
                 </div>
             </div>
 
@@ -314,9 +487,66 @@ const BillDetail: React.FC = () => {
             {/* Mobile Action Buttons (Sticky Bottom) */}
             <div className="md:hidden fixed bottom-0 left-0 right-0 p-4 bg-white border-t flex flex-col gap-2 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-10">
                 {bill.status === 'draft' && (
-                    <Button onClick={handleActivateTagihan} disabled={isUpdatingStatus || bill.total_members === 0} className="bg-blue-600 hover:bg-blue-700 w-full">
-                        <PlayCircle className="w-4 h-4 mr-2" /> Aktifkan & Kirim Email
-                    </Button>
+                    <>
+                        {/* Note: The physical dialog component logic is rendered once at the top in Desktop but triggering from multiple places works best if we pull it up or duplicate. Since we are using DialogTrigger wrapping simple buttons, duplicating the Trigger code logic inside the same Dialog wrapper might be complex, so we'll just duplicate the Dialog structure entirely for mobile */}
+                        <Dialog open={openEdit} onOpenChange={setOpenEdit}>
+                            <DialogTrigger asChild>
+                                <Button variant="outline" className="w-full text-slate-600">
+                                    <Edit className="w-4 h-4 mr-2" /> Edit Tagihan
+                                </Button>
+                            </DialogTrigger>
+                            <DialogContent className="sm:max-w-[425px]">
+                                <form onSubmit={handleEditBill}>
+                                    <DialogHeader>
+                                        <DialogTitle>Edit Tagihan</DialogTitle>
+                                        <DialogDescription>
+                                            Ubah detail tagihan. Tagihan yang sudah aktif tidak bisa diedit.
+                                        </DialogDescription>
+                                    </DialogHeader>
+                                    <div className="grid gap-4 py-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="m-edit-judul">Judul Tagihan</Label>
+                                            <Input
+                                                id="m-edit-judul"
+                                                value={editJudul}
+                                                onChange={(e) => setEditJudul(e.target.value)}
+                                                required
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="m-edit-nominal">Nominal (Rp)</Label>
+                                            <Input
+                                                id="m-edit-nominal"
+                                                value={editNominalStr}
+                                                onChange={handleEditNominalChange}
+                                                required
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="m-edit-deadline">Tenggat Waktu</Label>
+                                            <Input
+                                                id="m-edit-deadline"
+                                                type="date"
+                                                value={editDeadline}
+                                                onChange={(e) => setEditDeadline(e.target.value)}
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+                                    <DialogFooter>
+                                        <Button type="button" variant="outline" onClick={() => setOpenEdit(false)}>Batal</Button>
+                                        <Button type="submit" disabled={isEditing} className="bg-green-600 hover:bg-green-700">
+                                            {isEditing ? 'Menyimpan...' : 'Simpan Perubahan'}
+                                        </Button>
+                                    </DialogFooter>
+                                </form>
+                            </DialogContent>
+                        </Dialog>
+
+                        <Button onClick={handleActivateTagihan} disabled={isUpdatingStatus || bill.total_members === 0} className="bg-blue-600 hover:bg-blue-700 w-full">
+                            <PlayCircle className="w-4 h-4 mr-2" /> Aktifkan & Kirim Email
+                        </Button>
+                    </>
                 )}
 
                 {(bill.status === 'active' || bill.status === 'draft') && (
@@ -330,6 +560,29 @@ const BillDetail: React.FC = () => {
                         <StopCircle className="w-4 h-4 mr-2" /> Tutup Tagihan
                     </Button>
                 )}
+
+                <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                        <Button variant="ghost" className="w-full text-red-600 hover:bg-red-50 hover:text-red-700 pointer-events-auto">
+                            <Trash2 className="w-4 h-4 mr-2" /> Hapus Tagihan
+                        </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Hapus Tagihan Secara Permanen?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                Tindakan ini tidak dapat dibatalkan. Menghapus tagihan juga akan menghapus <strong>seluruh data pembayaran</strong> dan link Mayar yang terkait.
+                                {bill.status === 'active' && <span className="block mt-2 font-bold text-red-600">Peringatan: Tagihan ini sedang aktif!</span>}
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Batal</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleDeleteBill} disabled={isDeleting} className="bg-red-600 hover:bg-red-700 focus:ring-red-600">
+                                {isDeleting ? 'Menghapus...' : 'Ya, Hapus Tagihan'}
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
             </div>
 
         </div>

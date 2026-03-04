@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api, type Bill, type Group } from '../lib/api';
+import { toast } from 'sonner';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Input } from '../components/ui/input';
@@ -26,7 +27,26 @@ import {
     SelectTrigger,
     SelectValue,
 } from "../components/ui/select"
-import { Receipt, Plus, Calendar } from 'lucide-react';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+
+import { Receipt, Plus, Calendar, MoreVertical, Edit, Trash2 } from 'lucide-react';
 
 // Define extended type
 type BillExtended = Bill & { total_members: number, paid_count: number, progress: number };
@@ -92,11 +112,13 @@ const Bills: React.FC = () => {
 
         const nominalValue = parseInt(nominalStr.replace(/\./g, ''), 10);
         if (isNaN(nominalValue) || nominalValue <= 0) {
-            alert("Nominal tidak valid.");
+            toast.error("Nominal tidak valid.");
             return;
         }
 
         setIsCreating(true);
+        toast.loading("Membuat tagihan baru...", { id: 'create-bill' });
+
         try {
             const newBill = await api.createBill(groupId, judul, nominalValue, deadline);
 
@@ -110,13 +132,97 @@ const Bills: React.FC = () => {
             setNominalStr('');
             setDeadline('');
 
+            toast.success("Berhasil membuat tagihan!", { id: 'create-bill' });
             // Navigate straight to detail view
             navigate(`/bills/${newBill.id}`);
         } catch (error) {
             console.error("Failed to create bill:", error);
-            alert("Gagal membuat tagihan. Pastikan grup memiliki anggota.");
+            toast.error("Gagal membuat tagihan. Pastikan grup memiliki anggota.", { id: 'create-bill' });
         } finally {
             setIsCreating(false);
+        }
+    };
+
+    const [openEdit, setOpenEdit] = useState(false);
+    const [editBillId, setEditBillId] = useState('');
+    const [editJudul, setEditJudul] = useState('');
+    const [editNominalStr, setEditNominalStr] = useState('');
+    const [editDeadline, setEditDeadline] = useState('');
+    const [isEditing, setIsEditing] = useState(false);
+
+    const openEditModal = (bill: BillExtended) => {
+        setEditBillId(bill.id);
+        setEditJudul(bill.judul);
+        setEditNominalStr(new Intl.NumberFormat('id-ID').format(bill.nominal));
+        setEditDeadline(bill.deadline);
+        setOpenEdit(true);
+    };
+
+    const handleEditNominalChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const val = e.target.value.replace(/\D/g, '');
+        if (val) {
+            setEditNominalStr(new Intl.NumberFormat('id-ID').format(parseInt(val, 10)));
+        } else {
+            setEditNominalStr('');
+        }
+    };
+
+    const submitEditBill = async (e: React.FormEvent) => {
+        e.preventDefault();
+        const nominalValue = parseInt(editNominalStr.replace(/\./g, ''), 10);
+        if (isNaN(nominalValue) || nominalValue <= 0) {
+            toast.error("Nominal tidak valid.");
+            return;
+        }
+
+        setIsEditing(true);
+        toast.loading("Menyimpan perubahan...", { id: 'edit-bill-list' });
+
+        try {
+            await api.updateBill(editBillId, editJudul, nominalValue, editDeadline);
+            // Re-fetch bills
+            if (user) {
+                const refreshedBills = await api.getAllBills(user.id);
+                setBills(refreshedBills);
+            }
+            setOpenEdit(false);
+            toast.success("Perubahan tagihan berhasil disimpan!", { id: 'edit-bill-list' });
+        } catch (error) {
+            console.error("Failed to edit bill:", error);
+            toast.error("Gagal menyimpan perubahan.", { id: 'edit-bill-list' });
+        } finally {
+            setIsEditing(false);
+        }
+    };
+
+    // --- Delete logic ---
+    const [deleteBillId, setDeleteBillId] = useState('');
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [openDeleteAlert, setOpenDeleteAlert] = useState(false);
+    const [pendingDeleteStatus, setPendingDeleteStatus] = useState('');
+
+    const confirmDelete = (billId: string, status: string) => {
+        setDeleteBillId(billId);
+        setPendingDeleteStatus(status);
+        setOpenDeleteAlert(true);
+    };
+
+    const executeDelete = async () => {
+        if (!deleteBillId) return;
+
+        setIsDeleting(true);
+        toast.loading("Menghapus tagihan...", { id: 'delete-bill-list' });
+
+        try {
+            await api.deleteBill(deleteBillId);
+            setBills(bills.filter(b => b.id !== deleteBillId));
+            toast.success("Tagihan berhasil dihapus.", { id: 'delete-bill-list' });
+        } catch (error) {
+            console.error("Failed to delete bill:", error);
+            toast.error("Gagal menghapus tagihan.", { id: 'delete-bill-list' });
+        } finally {
+            setIsDeleting(false);
+            setOpenDeleteAlert(false);
         }
     };
 
@@ -134,10 +240,10 @@ const Bills: React.FC = () => {
     };
 
     const renderBillCard = (bill: BillExtended) => (
-        <Card key={bill.id} className="cursor-pointer hover:shadow-md transition-all" onClick={() => navigate(`/bills/${bill.id}`)}>
-            <CardHeader className="pb-3">
+        <Card key={bill.id} className="cursor-pointer hover:shadow-md transition-all relative group" onClick={() => navigate(`/bills/${bill.id}`)}>
+            <CardHeader className="pb-3 pr-10">
                 <div className="flex justify-between items-start gap-2">
-                    <CardTitle className="text-lg line-clamp-1">{bill.judul}</CardTitle>
+                    <CardTitle className="text-lg line-clamp-1 pr-6">{bill.judul}</CardTitle>
                     <Badge variant={getBadgeVariant(bill.status) as any} className={bill.status === 'active' ? 'bg-blue-100 text-blue-800 hover:bg-blue-100' : ''}>
                         {bill.status === 'active' ? 'Aktif' : bill.status === 'closed' ? 'Selesai' : 'Draft'}
                     </Badge>
@@ -148,6 +254,34 @@ const Bills: React.FC = () => {
                         <Calendar className="h-3 w-3" /> Deadline: {new Date(bill.deadline).toLocaleDateString('id-ID')}
                     </span>
                 </CardDescription>
+
+                <div className="absolute top-4 right-4" onClick={e => e.stopPropagation()}>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-slate-900 focus-visible:ring-0 focus-visible:ring-offset-0">
+                                <span className="sr-only">Open menu</span>
+                                <MoreVertical className="h-4 w-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-[160px]">
+                            <DropdownMenuLabel>Aksi Tagihan</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => navigate(`/bills/${bill.id}`)}>
+                                Lihat Detail
+                            </DropdownMenuItem>
+                            {bill.status === 'draft' && (
+                                <DropdownMenuItem onClick={() => openEditModal(bill)}>
+                                    <Edit className="mr-2 h-4 w-4" />
+                                    <span>Edit</span>
+                                </DropdownMenuItem>
+                            )}
+                            <DropdownMenuItem onClick={() => confirmDelete(bill.id, bill.status)} className="text-red-600 focus:bg-red-50 focus:text-red-700">
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                <span>Hapus</span>
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
             </CardHeader>
             <CardContent>
                 <p className="text-xl font-bold mb-4">{formatCurrency(bill.nominal)}</p>
@@ -245,6 +379,75 @@ const Bills: React.FC = () => {
                     </DialogContent>
                 </Dialog>
             </div>
+
+            {/* Edit Dialog */}
+            <Dialog open={openEdit} onOpenChange={setOpenEdit}>
+                <DialogContent className="sm:max-w-[425px]">
+                    <form onSubmit={submitEditBill}>
+                        <DialogHeader>
+                            <DialogTitle>Edit Tagihan</DialogTitle>
+                            <DialogDescription>
+                                Ubah detail tagihan. Tagihan yang sudah aktif tidak bisa diedit.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="grid gap-4 py-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="edit-list-judul">Judul Tagihan</Label>
+                                <Input
+                                    id="edit-list-judul"
+                                    value={editJudul}
+                                    onChange={(e) => setEditJudul(e.target.value)}
+                                    required
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="edit-list-nominal">Nominal (Rp)</Label>
+                                <Input
+                                    id="edit-list-nominal"
+                                    value={editNominalStr}
+                                    onChange={handleEditNominalChange}
+                                    required
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="edit-list-deadline">Tenggat Waktu</Label>
+                                <Input
+                                    id="edit-list-deadline"
+                                    type="date"
+                                    value={editDeadline}
+                                    onChange={(e) => setEditDeadline(e.target.value)}
+                                    required
+                                />
+                            </div>
+                        </div>
+                        <DialogFooter>
+                            <Button type="button" variant="outline" onClick={() => setOpenEdit(false)}>Batal</Button>
+                            <Button type="submit" disabled={isEditing} className="bg-green-600 hover:bg-green-700">
+                                {isEditing ? 'Menyimpan...' : 'Simpan Perubahan'}
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
+
+            {/* Delete Alert Dialog */}
+            <AlertDialog open={openDeleteAlert} onOpenChange={setOpenDeleteAlert}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Hapus Tagihan Secara Permanen?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Tindakan ini tidak dapat dibatalkan. Menghapus tagihan juga akan menghapus <strong>seluruh data pembayaran</strong> yang ada di dalamnya.
+                            {pendingDeleteStatus === 'active' && <span className="block mt-2 font-bold text-red-600">Peringatan: Tagihan ini sedang aktif!</span>}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Batal</AlertDialogCancel>
+                        <AlertDialogAction onClick={executeDelete} disabled={isDeleting} className="bg-red-600 hover:bg-red-700 focus:ring-red-600">
+                            {isDeleting ? 'Menghapus...' : 'Ya, Hapus Tagihan'}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
 
             {loading ? (
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api, type Group } from '../lib/api';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -52,15 +53,18 @@ const Groups: React.FC = () => {
         if (!user || !newGroupName.trim()) return;
 
         setIsCreating(true);
+        toast.loading("Membuat grup baru...", { id: 'create-group' });
+
         try {
             const newGroup = await api.createGroup(user.id, newGroupName, newGroupDesc);
             setGroups([newGroup, ...groups]); // Optimistic local prepend
             setOpen(false);
             setNewGroupName('');
             setNewGroupDesc('');
+            toast.success("Berhasil membuat grup!", { id: 'create-group' });
         } catch (error) {
             console.error("Failed to create group:", error);
-            alert("Gagal membuat grup. Silakan coba lagi.");
+            toast.error("Gagal membuat grup. Silakan coba lagi.", { id: 'create-group' });
         } finally {
             setIsCreating(false);
         }

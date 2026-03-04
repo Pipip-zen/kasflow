@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api, type Group, type Member } from '../lib/api';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -70,6 +71,7 @@ const GroupDetail: React.FC = () => {
         if (!id || !newMemberName.trim() || !newMemberEmail.trim()) return;
 
         setIsAdding(true);
+        toast.loading("Menambahkan anggota baru...", { id: 'add-member' });
         try {
             const newMember = await api.addMember(id, newMemberName, newMemberEmail.trim(), newMemberWa.trim());
             setMembers([newMember, ...members]);
@@ -77,9 +79,10 @@ const GroupDetail: React.FC = () => {
             setNewMemberName('');
             setNewMemberEmail('');
             setNewMemberWa('');
+            toast.success(`Berhasil menambahkan ${newMemberName}!`, { id: 'add-member' });
         } catch (error) {
             console.error("Failed to add member:", error);
-            alert("Gagal menambahkan anggota.");
+            toast.error("Gagal menambahkan anggota. Pastikan Email belum terdaftar di grup ini.", { id: 'add-member' });
         } finally {
             setIsAdding(false);
         }
@@ -87,12 +90,14 @@ const GroupDetail: React.FC = () => {
 
     const handleDeleteMember = async (memberId: string, name: string) => {
         if (window.confirm(`Hapus anggota '${name}' dari grup ini? Semua data pembayarannya akan ikut terhapus.`)) {
+            toast.loading(`Menghapus ${name}...`, { id: 'del-member' });
             try {
                 await api.deleteMember(memberId);
                 setMembers(members.filter(m => m.id !== memberId));
+                toast.success(`${name} berhasil dihapus dari grup.`, { id: 'del-member' });
             } catch (error) {
                 console.error("Failed to delete member:", error);
-                alert("Gagal menghapus anggota.");
+                toast.error("Gagal menghapus anggota.", { id: 'del-member' });
             }
         }
     };
