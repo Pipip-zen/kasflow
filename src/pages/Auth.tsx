@@ -99,6 +99,13 @@ const Auth: React.FC = () => {
             return;
         }
 
+        // Supabase returns a user with empty identities if the email already exists
+        if (authData.user && authData.user.identities && authData.user.identities.length === 0) {
+            toast.error("Email ini sudah terdaftar. Silakan gunakan email lain atau masuk ke akun Anda.", { id: 'auth' });
+            setLoading(false);
+            return;
+        }
+
         if (authData.user) {
             const { error: insertError } = await supabase
                 .from('users')
