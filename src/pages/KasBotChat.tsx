@@ -60,7 +60,7 @@ export default function KasBotChat() {
 
         const newHistory: ChatHistory[] = [
             ...chatHistory,
-            { role: 'user', parts: [{ text }] }
+            { role: 'user', content: text }
         ];
         setChatHistory(newHistory);
 
@@ -76,7 +76,7 @@ export default function KasBotChat() {
             );
 
             const aiMessage: ExtendedMessage = {
-                role: 'model',
+                role: 'assistant',
                 content: responseText,
                 timestamp: new Date(),
             };
@@ -84,14 +84,14 @@ export default function KasBotChat() {
             setMessages(prev => [...prev, aiMessage]);
             setChatHistory(prev => [
                 ...prev,
-                { role: 'model', parts: [{ text: responseText }] },
+                { role: 'assistant' as const, content: responseText },
             ]);
         } catch (error) {
             console.error('Chat error:', error);
             setMessages(prev => [
                 ...prev,
                 {
-                    role: 'model',
+                    role: 'assistant',
                     content:
                         'Maaf, saya mengalami gangguan saat ini. Coba lagi ya! 🙏',
                     timestamp: new Date(),

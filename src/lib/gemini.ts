@@ -1,29 +1,36 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import Groq from "groq-sdk";
 import { getBendaharaContext } from "./chatContext";
-import { tools } from "./geminiTools";
+import { groqTools } from "./geminiTools";
 import { executeFunction } from "./functionExecutor";
 
+// ---- Types ----
 export type ChatMessage = {
-  role: "user" | "model";
+  role: "user" | "assistant";
   content: string;
   timestamp: Date;
   isLoading?: boolean;
   functionCalled?: string;
 };
 
+// ChatHistory now uses OpenAI/Groq-compatible format
 export type ChatHistory = {
-  role: "user" | "model";
-  parts: { text: string }[];
+  role: "user" | "assistant";
+  content: string;
 };
 
-const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+// ---- Groq Client ----
+const apiKey = import.meta.env.VITE_GROQ_API_KEY;
 
 if (!apiKey) {
-  console.warn("VITE_GEMINI_API_KEY is missing from environment variables.");
+  console.warn("VITE_GROQ_API_KEY is missing from environment variables.");
 }
 
-export const genAI = new GoogleGenerativeAI(apiKey || "");
+const groq = new Groq({
+  apiKey: apiKey || "",
+  dangerouslyAllowBrowser: true,
+});
 
+// ---- System Prompt ----
 const SYSTEM_PROMPT = `
 Kamu adalah asisten AI bernama "KasBot" untuk aplikasi KasFlow
 — aplikasi manajemen kas kolektif untuk bendahara organisasi, 
@@ -49,6 +56,7 @@ Aturan penting:
 - Gunakan emoji secukupnya agar terasa friendly
 `;
 
+// ---- sendMessage ----
 export async function sendMessage(
   message: string,
   history: ChatHistory[],
@@ -57,44 +65,57 @@ export async function sendMessage(
 ): Promise<string> {
   const contextData = await getBendaharaContext(userId);
 
-  const formattedPrompt = SYSTEM_PROMPT.replace(
+  const systemContent = SYSTEM_PROMPT.replace(
     "{CONTEXT_DATA}",
     JSON.stringify(contextData, null, 2)
   );
 
-  const model = genAI.getGenerativeModel({
-    model: "gemini-1.5-flash",
-    systemInstruction: formattedPrompt,
-    // @ts-ignore
-    tools: tools
+  // Build messages array in OpenAI format
+  const messages: any[] = [
+    { role: "system", content: systemContent },
+    ...history,
+    { role: "user", content: message },
+  ];
+
+  let response = await groq.chat.completions.create({
+    model: "llama-3.3-70b-versatile",
+    messages,
+    tools: groqTools,
+    tool_choice: "auto",
+    max_tokens: 2048,
   });
 
-  const chatSession = model.startChat({
-    history: history,
-  });
+  let responseMessage = response.choices[0].message;
 
-  let response = await chatSession.sendMessage(message);
-  let functionCalls = response.response.functionCalls();
+  // ---- Function Calling Loop ----
+  while (responseMessage.tool_calls && responseMessage.tool_calls.length > 0) {
+    // Push the assistant's tool_calls message back into the conversation
+    messages.push(responseMessage);
 
-  while (functionCalls && functionCalls.length > 0) {
-    const functionCall = functionCalls[0];
-    const functionName = functionCall.name;
-    const functionArgs = functionCall.args;
+    for (const toolCall of responseMessage.tool_calls) {
+      const functionName = toolCall.function.name;
+      const functionArgs = JSON.parse(toolCall.function.arguments || "{}");
 
-    // Notify UI of which function is being called
-    onFunctionCall?.(functionName);
+      onFunctionCall?.(functionName);
 
-    const apiResponse = await executeFunction(functionName, functionArgs, userId);
+      const result = await executeFunction(functionName, functionArgs, userId);
 
-    response = await chatSession.sendMessage([{
-      functionResponse: {
-        name: functionName,
-        response: apiResponse
-      }
-    }]);
+      messages.push({
+        role: "tool",
+        tool_call_id: toolCall.id,
+        content: JSON.stringify(result),
+      });
+    }
 
-    functionCalls = response.response.functionCalls();
+    // Re-send with function results
+    response = await groq.chat.completions.create({
+      model: "llama-3.3-70b-versatile",
+      messages,
+      max_tokens: 2048,
+    });
+
+    responseMessage = response.choices[0].message;
   }
 
-  return response.response.text();
+  return responseMessage.content || "";
 }
