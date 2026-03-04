@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'sonner';
@@ -22,6 +22,8 @@ import {
 } from '../components/ui/tabs';
 
 const Auth: React.FC = () => {
+    const [searchParams, setSearchParams] = useSearchParams();
+    const mode = searchParams.get('mode') === 'register' ? 'register' : 'login';
     const [loading, setLoading] = useState(false);
 
     // Login State
@@ -123,7 +125,7 @@ const Auth: React.FC = () => {
                 </CardHeader>
 
                 <CardContent>
-                    <Tabs defaultValue="login" className="w-full">
+                    <Tabs value={mode} onValueChange={(val) => setSearchParams({ mode: val })} className="w-full">
                         <TabsList className="grid w-full grid-cols-2 mb-6">
                             <TabsTrigger value="login">Masuk</TabsTrigger>
                             <TabsTrigger value="register">Daftar</TabsTrigger>
