@@ -1,13 +1,17 @@
 export interface MayarPaymentData {
     title: string;
+    group_name: string;
     amount: number;
     customer_name: string;
     customer_email?: string;
+    customer_mobile?: string;
+    deadline: string;
     payment_token: string;
 }
 
 export const createPaymentLink = async (data: MayarPaymentData): Promise<{ payment_url: string; mayar_payment_id: string } | null> => {
     const apiKey = import.meta.env.VITE_MAYAR_API_KEY;
+    const appUrl = (import.meta.env.VITE_APP_URL || window.location.origin).replace(/\/$/, '');
 
     if (!apiKey) {
         console.warn("Mayar API Key is missing.");
@@ -17,14 +21,15 @@ export const createPaymentLink = async (data: MayarPaymentData): Promise<{ payme
     try {
         const payload = {
             name: data.customer_name,
-            email: data.customer_email || "no-reply@kasflow.local", // Mayar sometimes requires email, use dummy if absent
-            amount: data.amount,
-            description: data.title,
-            // Pass token as metadata or reference id so webhook can identify it if needed, or just rely on mayar_payment_id
-            reference_id: data.payment_token
+            email: data.customer_email || "no-reply@kasflow.local",
+            amount: Math.round(data.amount),
+            mobile: data.customer_mobile && data.customer_mobile.length >= 10 ? data.customer_mobile : "08000000000",
+            redirectUrl: `${appUrl}/pay/${data.payment_token}`,
+            description: `Tagihan ${data.title} - ${data.group_name}`,
+            expiredAt: new Date(data.deadline).toISOString()
         };
 
-        const endpoint = import.meta.env.DEV ? '/api/mayar/hl/v1/payment/create' : 'https://api.mayar.id/hl/v1/payment/create';
+        const endpoint = 'https://api.mayar.id/hl/v1/payment/create';
 
         const response = await fetch(endpoint, { // NOTE: proxy bypass avoids OPTIONS blocked queries
             method: 'POST',
@@ -36,9 +41,9 @@ export const createPaymentLink = async (data: MayarPaymentData): Promise<{ payme
         });
 
         const result = await response.json();
+        console.log("Mayar Response:", result);
 
-        if (result.statusCode === 200 || result.status === 'success') {
-            // Typically Mayar returns link inside `data.link` and `data.id`
+        if (result.statusCode === 200 || result.messages === 'success') {
             return {
                 payment_url: result.data.link,
                 mayar_payment_id: result.data.id
