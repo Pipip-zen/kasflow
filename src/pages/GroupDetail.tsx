@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Textarea } from '@/components/ui/textarea';
 import {
     Table,
     TableBody,
@@ -26,7 +27,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog"
-import { ArrowLeft, Plus, UserX, User, Trash2 } from 'lucide-react';
+import { ArrowLeft, Plus, UserX, User, Trash2, Pencil } from 'lucide-react';
 
 const GroupDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -37,11 +38,26 @@ const GroupDetail: React.FC = () => {
     const [members, setMembers] = useState<Member[]>([]);
     const [loading, setLoading] = useState(true);
 
+    // --- Add Member ---
     const [openAdd, setOpenAdd] = useState(false);
     const [newMemberName, setNewMemberName] = useState('');
     const [newMemberEmail, setNewMemberEmail] = useState('');
     const [newMemberWa, setNewMemberWa] = useState('');
     const [isAdding, setIsAdding] = useState(false);
+
+    // --- Edit Member ---
+    const [openEditMember, setOpenEditMember] = useState(false);
+    const [memberToEdit, setMemberToEdit] = useState<Member | null>(null);
+    const [editMemberName, setEditMemberName] = useState('');
+    const [editMemberEmail, setEditMemberEmail] = useState('');
+    const [editMemberWa, setEditMemberWa] = useState('');
+    const [isEditingMember, setIsEditingMember] = useState(false);
+
+    // --- Edit Group ---
+    const [openEditGroup, setOpenEditGroup] = useState(false);
+    const [editGroupName, setEditGroupName] = useState('');
+    const [editGroupDesc, setEditGroupDesc] = useState('');
+    const [isEditingGroup, setIsEditingGroup] = useState(false);
 
     useEffect(() => {
         if (!id || !user) return;
@@ -57,7 +73,6 @@ const GroupDetail: React.FC = () => {
                 setMembers(membersData);
             } catch (error) {
                 console.error("Failed to fetch group details:", error);
-                // If not found or not owner, we can kick back
                 navigate('/groups', { replace: true });
             } finally {
                 setLoading(false);
@@ -67,6 +82,7 @@ const GroupDetail: React.FC = () => {
         fetchDetail();
     }, [id, user, navigate]);
 
+    // -------------------- Add Member --------------------
     const handleAddMember = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!id || !newMemberName.trim() || !newMemberEmail.trim()) return;
@@ -89,6 +105,67 @@ const GroupDetail: React.FC = () => {
         }
     };
 
+    // -------------------- Edit Member --------------------
+    const handleOpenEditMember = (member: Member) => {
+        setMemberToEdit(member);
+        setEditMemberName(member.nama);
+        setEditMemberEmail(member.email || '');
+        setEditMemberWa(member.nomor_wa || '');
+        setOpenEditMember(true);
+    };
+
+    const handleSaveEditMember = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!memberToEdit || !editMemberName.trim() || !editMemberEmail.trim()) return;
+
+        setIsEditingMember(true);
+        toast.loading("Menyimpan perubahan...", { id: 'edit-member' });
+        try {
+            const updated = await api.updateMember(
+                memberToEdit.id,
+                editMemberName.trim(),
+                editMemberEmail.trim(),
+                editMemberWa.trim() || undefined
+            );
+            setMembers(members.map(m => m.id === updated.id ? updated : m));
+            setOpenEditMember(false);
+            toast.success(`Data ${updated.nama} berhasil diperbarui!`, { id: 'edit-member' });
+        } catch (error) {
+            console.error("Failed to update member:", error);
+            toast.error("Gagal memperbarui data anggota.", { id: 'edit-member' });
+        } finally {
+            setIsEditingMember(false);
+        }
+    };
+
+    // -------------------- Edit Group --------------------
+    const handleOpenEditGroup = () => {
+        if (!group) return;
+        setEditGroupName(group.nama);
+        setEditGroupDesc(group.deskripsi || '');
+        setOpenEditGroup(true);
+    };
+
+    const handleSaveEditGroup = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!id || !editGroupName.trim()) return;
+
+        setIsEditingGroup(true);
+        toast.loading("Menyimpan perubahan grup...", { id: 'edit-group' });
+        try {
+            const updated = await api.updateGroup(id, editGroupName.trim(), editGroupDesc.trim() || undefined);
+            setGroup(updated);
+            setOpenEditGroup(false);
+            toast.success(`Grup berhasil diperbarui!`, { id: 'edit-group' });
+        } catch (error) {
+            console.error("Failed to update group:", error);
+            toast.error("Gagal memperbarui data grup.", { id: 'edit-group' });
+        } finally {
+            setIsEditingGroup(false);
+        }
+    };
+
+    // -------------------- Delete Member --------------------
     const [openConfirmDeleteMember, setOpenConfirmDeleteMember] = useState(false);
     const [memberToDelete, setMemberToDelete] = useState<{ id: string, name: string } | null>(null);
 
@@ -112,6 +189,7 @@ const GroupDetail: React.FC = () => {
         }
     };
 
+    // -------------------- Delete Group --------------------
     const [openConfirmDeleteGroup, setOpenConfirmDeleteGroup] = useState(false);
     const [isDeletingGroup, setIsDeletingGroup] = useState(false);
     const [confirmGroupName, setConfirmGroupName] = useState('');
@@ -152,6 +230,7 @@ const GroupDetail: React.FC = () => {
                 <ArrowLeft className="mr-2 h-4 w-4" /> Kembali ke Daftar Grup
             </Button>
 
+            {/* Header: Group name + actions */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">{group.nama}</h1>
@@ -159,15 +238,23 @@ const GroupDetail: React.FC = () => {
                         {group.deskripsi || 'Tidak ada deskripsi.'}
                     </p>
                 </div>
-                <Button
-                    variant="destructive"
-                    onClick={() => setOpenConfirmDeleteGroup(true)}
-                    className="flex-shrink-0"
-                >
-                    <Trash2 className="w-4 h-4 mr-2" /> Hapus Grup
-                </Button>
+                <div className="flex gap-2 flex-shrink-0">
+                    <Button
+                        variant="outline"
+                        onClick={handleOpenEditGroup}
+                    >
+                        <Pencil className="w-4 h-4 mr-2" /> Edit Grup
+                    </Button>
+                    <Button
+                        variant="destructive"
+                        onClick={() => setOpenConfirmDeleteGroup(true)}
+                    >
+                        <Trash2 className="w-4 h-4 mr-2" /> Hapus Grup
+                    </Button>
+                </div>
             </div>
 
+            {/* Members Table */}
             <div className="grid gap-6">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between">
@@ -176,6 +263,7 @@ const GroupDetail: React.FC = () => {
                             <CardDescription>Kelola anggota yang terdaftar di grup ini ({members.length} anggota)</CardDescription>
                         </div>
 
+                        {/* Add Member Dialog */}
                         <Dialog open={openAdd} onOpenChange={setOpenAdd}>
                             <DialogTrigger asChild>
                                 <Button size="sm" className="bg-green-600 hover:bg-green-700">
@@ -212,7 +300,7 @@ const GroupDetail: React.FC = () => {
                                                 onChange={(e) => setNewMemberEmail(e.target.value)}
                                                 required
                                             />
-                                            <p className="text-xs text-muted-foreground">Wajib diisi untk menerima notifikasi tagihan Otomatis.</p>
+                                            <p className="text-xs text-muted-foreground">Wajib diisi untuk menerima notifikasi tagihan otomatis.</p>
                                         </div>
                                         <div className="space-y-2">
                                             <Label htmlFor="mem-wa">Nomor WhatsApp (Opsional)</Label>
@@ -251,7 +339,8 @@ const GroupDetail: React.FC = () => {
                                     <TableRow>
                                         <TableHead>Nama</TableHead>
                                         <TableHead>Alamat Email</TableHead>
-                                        <TableHead className="w-[100px] text-right">Aksi</TableHead>
+                                        <TableHead>Nomor WhatsApp</TableHead>
+                                        <TableHead className="w-[120px] text-right">Aksi</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -259,7 +348,17 @@ const GroupDetail: React.FC = () => {
                                         <TableRow key={member.id}>
                                             <TableCell className="font-medium">{member.nama}</TableCell>
                                             <TableCell>{member.email || <span className="text-slate-400 italic">Belum diisi</span>}</TableCell>
-                                            <TableCell className="text-right">
+                                            <TableCell>{member.nomor_wa || <span className="text-slate-400 italic">Belum diisi</span>}</TableCell>
+                                            <TableCell className="text-right space-x-1">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="text-slate-500 hover:text-slate-700 hover:bg-slate-100"
+                                                    onClick={() => handleOpenEditMember(member)}
+                                                    title="Edit Anggota"
+                                                >
+                                                    <Pencil className="h-4 w-4" />
+                                                </Button>
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
@@ -278,6 +377,102 @@ const GroupDetail: React.FC = () => {
                     </CardContent>
                 </Card>
             </div>
+
+            {/* Edit Member Dialog */}
+            <Dialog open={openEditMember} onOpenChange={setOpenEditMember}>
+                <DialogContent className="sm:max-w-[425px]">
+                    <form onSubmit={handleSaveEditMember}>
+                        <DialogHeader>
+                            <DialogTitle>Edit Anggota</DialogTitle>
+                            <DialogDescription>
+                                Ubah informasi anggota <strong>{memberToEdit?.nama}</strong>.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="grid gap-4 py-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="edit-mem-name">Nama Anggota <span className="text-red-500">*</span></Label>
+                                <Input
+                                    id="edit-mem-name"
+                                    placeholder="Contoh: Andi"
+                                    value={editMemberName}
+                                    onChange={(e) => setEditMemberName(e.target.value)}
+                                    required
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="edit-mem-email">Alamat Email <span className="text-red-500">*</span></Label>
+                                <Input
+                                    id="edit-mem-email"
+                                    type="email"
+                                    placeholder="Contoh: andi@gmail.com"
+                                    value={editMemberEmail}
+                                    onChange={(e) => setEditMemberEmail(e.target.value)}
+                                    required
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="edit-mem-wa">Nomor WhatsApp (Opsional)</Label>
+                                <Input
+                                    id="edit-mem-wa"
+                                    placeholder="Contoh: 08123456789"
+                                    value={editMemberWa}
+                                    onChange={(e) => setEditMemberWa(e.target.value)}
+                                />
+                            </div>
+                        </div>
+                        <DialogFooter>
+                            <Button type="button" variant="outline" onClick={() => setOpenEditMember(false)}>Batal</Button>
+                            <Button type="submit" disabled={isEditingMember} className="bg-green-600 hover:bg-green-700">
+                                {isEditingMember ? 'Menyimpan...' : 'Simpan Perubahan'}
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
+
+            {/* Edit Group Dialog */}
+            <Dialog open={openEditGroup} onOpenChange={setOpenEditGroup}>
+                <DialogContent className="sm:max-w-[425px]">
+                    <form onSubmit={handleSaveEditGroup}>
+                        <DialogHeader>
+                            <DialogTitle>Edit Grup</DialogTitle>
+                            <DialogDescription>
+                                Ubah nama dan deskripsi grup ini.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="grid gap-4 py-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="edit-group-name">Nama Grup <span className="text-red-500">*</span></Label>
+                                <Input
+                                    id="edit-group-name"
+                                    placeholder="Contoh: Iuran Kelas 12A"
+                                    value={editGroupName}
+                                    onChange={(e) => setEditGroupName(e.target.value)}
+                                    required
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="edit-group-desc">Deskripsi (Opsional)</Label>
+                                <Textarea
+                                    id="edit-group-desc"
+                                    placeholder="Contoh: Iuran bulanan kelas 12A untuk kegiatan sekolah"
+                                    value={editGroupDesc}
+                                    onChange={(e) => setEditGroupDesc(e.target.value)}
+                                    rows={3}
+                                />
+                            </div>
+                        </div>
+                        <DialogFooter>
+                            <Button type="button" variant="outline" onClick={() => setOpenEditGroup(false)}>Batal</Button>
+                            <Button type="submit" disabled={isEditingGroup} className="bg-green-600 hover:bg-green-700">
+                                {isEditingGroup ? 'Menyimpan...' : 'Simpan Perubahan'}
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
+
+            {/* Confirm Delete Member */}
             <ConfirmDialog
                 open={openConfirmDeleteMember}
                 onOpenChange={setOpenConfirmDeleteMember}
@@ -288,6 +483,7 @@ const GroupDetail: React.FC = () => {
                 onConfirm={executeDeleteMember}
             />
 
+            {/* Confirm Delete Group */}
             <Dialog open={openConfirmDeleteGroup} onOpenChange={setOpenConfirmDeleteGroup}>
                 <DialogContent className="sm:max-w-md">
                     <DialogHeader>

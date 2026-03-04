@@ -111,6 +111,28 @@ export const api = {
         if (error) throw error;
     },
 
+    updateMember: async (memberId: string, nama: string, email: string, nomorWa?: string) => {
+        const { data, error } = await supabase
+            .from('members')
+            .update({ nama, email, nomor_wa: nomorWa || null })
+            .eq('id', memberId)
+            .select()
+            .single();
+        if (error) throw error;
+        return data as Member;
+    },
+
+    updateGroup: async (groupId: string, nama: string, deskripsi?: string) => {
+        const { data, error } = await supabase
+            .from('groups')
+            .update({ nama, deskripsi: deskripsi || null })
+            .eq('id', groupId)
+            .select()
+            .single();
+        if (error) throw error;
+        return data as Group;
+    },
+
     // --------- DASHBOARD STATS ---------
     getDashboardStats: async (bendaharaId: string) => {
         // 1. Total Groups

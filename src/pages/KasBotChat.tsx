@@ -141,15 +141,41 @@ function LoadingBubble({ status }: { status: string }) {
     );
 }
 
+// ---------- STORAGE ----------
+const STORAGE_KEY = 'kasbot_chat';
+
+function loadFromStorage(): { messages: ExtendedMessage[]; history: ChatHistory[] } {
+    try {
+        const raw = sessionStorage.getItem(STORAGE_KEY);
+        if (!raw) return { messages: [], history: [] };
+        const parsed = JSON.parse(raw);
+        // Re-hydrate Date objects from ISO strings
+        const messages = (parsed.messages || []).map((m: any) => ({
+            ...m,
+            timestamp: new Date(m.timestamp),
+        })) as ExtendedMessage[];
+        return { messages, history: parsed.history || [] };
+    } catch {
+        return { messages: [], history: [] };
+    }
+}
+
 // ---------- MAIN COMPONENT ----------
 export default function KasBotChat() {
     const { user } = useAuth();
-    const [messages, setMessages] = useState<ExtendedMessage[]>([]);
+
+    const stored = loadFromStorage();
+    const [messages, setMessages] = useState<ExtendedMessage[]>(stored.messages);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [loadingStatus, setLoadingStatus] = useState('KasBot sedang berpikir...');
-    const [chatHistory, setChatHistory] = useState<ChatHistory[]>([]);
+    const [chatHistory, setChatHistory] = useState<ChatHistory[]>(stored.history);
     const messagesEndRef = useRef<HTMLDivElement>(null);
+
+    // Persist to sessionStorage whenever messages or history change
+    useEffect(() => {
+        sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ messages, history: chatHistory }));
+    }, [messages, chatHistory]);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -162,6 +188,7 @@ export default function KasBotChat() {
     const handleClearChat = () => {
         setMessages([]);
         setChatHistory([]);
+        sessionStorage.removeItem(STORAGE_KEY);
     };
 
     const handleSend = async (text: string = input) => {
@@ -247,7 +274,7 @@ export default function KasBotChat() {
                                 AI
                             </span>
                         </div>
-                        <p className="text-xs text-gray-500">Powered by Gemini • Data real-time</p>
+                        <p className="text-xs text-gray-500">Powered by Groq • Data real-time</p>
                     </div>
                 </div>
 
