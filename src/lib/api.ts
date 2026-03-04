@@ -389,8 +389,12 @@ export const api = {
                     // Generate Mayar Link
                     const mayarRes = await createPaymentLink({
                         title: bill.judul,
+                        group_name: namaGroup,
                         amount: bill.nominal,
                         customer_name: namaMember,
+                        customer_email: (p.members as any)?.email,
+                        customer_mobile: (p.members as any)?.nomor_wa,
+                        deadline: bill.deadline,
                         payment_token: paymentToken
                     });
 
@@ -398,12 +402,18 @@ export const api = {
                     if (mayarRes) {
                         updatePayload.payment_url = mayarRes.payment_url;
                         updatePayload.mayar_payment_id = mayarRes.mayar_payment_id;
+                    } else {
+                        console.error(`Gagal membuat payment link Mayar untuk member: ${namaMember}`);
                     }
 
-                    await supabase
+                    const { error: updateError } = await supabase
                         .from('payments')
                         .update(updatePayload)
                         .eq('id', p.id);
+
+                    if (updateError) {
+                        console.error("Supabase Error Update Payments:", updateError);
+                    }
                 }
 
                 const memberEmail = (p.members as any)?.email;

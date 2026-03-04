@@ -145,19 +145,22 @@ const PublicPayment: React.FC = () => {
                                 <p className="text-xs text-green-700 opacity-90">Terima kasih, pembayaran Anda telah tercatat otomatis di sistem KasFlow.</p>
                             </div>
                         </div>
-                    ) : (
+                    ) : payment.payment_url ? (
                         <Button
                             className="w-full py-6 text-lg bg-green-600 hover:bg-green-700 shadow-lg shadow-green-600/20"
                             onClick={() => {
-                                if (payment.payment_url) {
-                                    window.location.href = payment.payment_url;
-                                } else {
-                                    alert("Link pembayaran belum tersedia. Silakan hubungi bendahara Anda.");
-                                }
+                                window.open(payment.payment_url!, '_blank', 'noopener,noreferrer');
                             }}
                         >
                             <Wallet className="w-5 h-5 mr-2" />
                             Bayar Sekarang
+                        </Button>
+                    ) : (
+                        <Button
+                            className="w-full py-6 text-base bg-slate-300 hover:bg-slate-300 text-slate-600 cursor-not-allowed shadow-none"
+                            disabled
+                        >
+                            Link pembayaran sedang diproses, coba beberapa saat lagi
                         </Button>
                     )}
 
