@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 
@@ -12,51 +11,55 @@ serve(async (req) => {
     }
 
     try {
-        const signature = req.headers.get('x-mayar-signature');
-        const webhookSecret = Deno.env.get('MAYAR_WEBHOOK_SECRET');
+        const token = req.headers.get("Authorization");
+        const webhookSecret = Deno.env.get("MAYAR_WEBHOOK_SECRET");
 
-        // NOTE: In production, you should cryptographically verify the signature
-        // using HMAC-SHA256 according to Mayar.id documentation.
-        // For now, we will rely on basic presence checks and token payload logic.
-
-        if (!webhookSecret) {
-            console.warn("Missing MAYAR_WEBHOOK_SECRET in Edge Function environment");
+        // Verifikasi token dari header Authorization
+        if (token !== webhookSecret) {
+            console.warn("Unauthorized webhook attempt");
+            return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
         }
 
-        const payload = await req.json();
+        const body = await req.json();
+        const { event, data } = body;
 
-        // Check if the event is a successful payment
-        if (payload.status === 'success' || payload.status === 'settled') {
-            const mayarPaymentId = payload.data?.id;
+        // Jika event berupa testing dari dashboard Mayar
+        if (event === "testing") {
+            return new Response(JSON.stringify({ received: true, message: "Testing event acknowledged" }), {
+                status: 200,
+                headers: { "Content-Type": "application/json" }
+            });
+        }
 
-            if (!mayarPaymentId) {
-                return new Response(JSON.stringify({ error: 'Missing payment ID in payload' }), { status: 400 });
-            }
+        const mayarTransactionId = data?.id;
+        const status = data?.status;
 
+        // Jika event payment success
+        if (status === "SUCCESS" && mayarTransactionId) {
             // Initialize Supabase Client using Service Role
             const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
             const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
 
             const supabase = createClient(supabaseUrl, supabaseKey);
 
-            // Update the KasFlow payment record matches the Mayar transaction ID
+            // Update the KasFlow payment record that matches the Mayar transaction ID
             const { error } = await supabase
                 .from('payments')
                 .update({
                     status: 'paid',
                     paid_at: new Date().toISOString()
                 })
-                .eq('mayar_payment_id', mayarPaymentId);
+                .eq('mayar_payment_id', mayarTransactionId);
 
             if (error) {
                 console.error("Failed adjusting database:", error);
-                return new Response(JSON.stringify({ error: 'Database update failed' }), { status: 500 });
+            } else {
+                console.log(`Successfully settled payment for Mayar ID: ${mayarTransactionId}`);
             }
-
-            console.log(`Successfully settled payment for Mayar ID: ${mayarPaymentId}`);
         }
 
-        // Always return 200 OK to acknowledge receipt to Mayar
+        // 5. Selalu return 200 OK di akhir meskipun payment tidak ditemukan
+        // supaya Mayar tidak me-retry webhook terus-menerus.
         return new Response(JSON.stringify({ received: true }), {
             status: 200,
             headers: { "Content-Type": "application/json" }
