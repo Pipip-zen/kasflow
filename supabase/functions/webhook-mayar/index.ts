@@ -1,8 +1,7 @@
-// @ts-nocheck
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+// @ts-ignore
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 
-serve(async (req) => {
+Deno.serve(async (req) => {
     // Only accept POST requests
     if (req.method !== 'POST') {
         return new Response(JSON.stringify({ error: 'Method not allowed' }), {
