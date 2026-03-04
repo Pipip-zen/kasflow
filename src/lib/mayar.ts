@@ -19,17 +19,24 @@ export const createPaymentLink = async (data: MayarPaymentData): Promise<{ payme
     }
 
     try {
-        let expiredDate = new Date();
+        let finalExpiredAt: string;
+
         if (data.deadline) {
-            const deadlineDate = new Date(data.deadline);
-            deadlineDate.setHours(23, 59, 59, 0); // End of the day
-            if (deadlineDate > expiredDate) {
-                expiredDate = deadlineDate;
+            const expired = new Date(data.deadline);
+            expired.setHours(23, 59, 59, 0);
+
+            // Check if deadline has passed
+            if (expired.getTime() < new Date().getTime()) {
+                const fallbackExpired = new Date();
+                fallbackExpired.setDate(fallbackExpired.getDate() + 7);
+                finalExpiredAt = fallbackExpired.toISOString();
             } else {
-                expiredDate.setDate(expiredDate.getDate() + 7); // 7 days from now if deadline is passed
+                finalExpiredAt = expired.toISOString();
             }
         } else {
-            expiredDate.setDate(expiredDate.getDate() + 7); // 7 days from now if no deadline
+            const expired = new Date();
+            expired.setDate(expired.getDate() + 7);
+            finalExpiredAt = expired.toISOString();
         }
 
         const payload = {
@@ -39,7 +46,7 @@ export const createPaymentLink = async (data: MayarPaymentData): Promise<{ payme
             mobile: data.customer_mobile && data.customer_mobile.length >= 10 ? data.customer_mobile : "08000000000",
             redirectUrl: `${appUrl}/pay/${data.payment_token}`,
             description: `Tagihan ${data.title} - ${data.group_name}`,
-            expiredAt: expiredDate.toISOString()
+            expiredAt: finalExpiredAt
         };
 
         const endpoint = 'https://api.mayar.club/hl/v1/payment/create';
