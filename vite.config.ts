@@ -14,7 +14,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api/mayar': {
-        target: 'https://api.mayar.id',
+        target: 'https://api.mayar.club',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api\/mayar/, ''),
       }
