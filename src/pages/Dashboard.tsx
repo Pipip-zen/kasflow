@@ -30,6 +30,7 @@ const Dashboard: React.FC = () => {
             toast.success('Email berhasil diverifikasi! 🎉', {
                 description: 'Selamat datang di KasFlow!',
                 duration: 5000,
+                id: 'email-verify-success'
             });
             navigate('/dashboard', { replace: true });
         }
