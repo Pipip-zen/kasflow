@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { useAuth } from '../context/AuthContext';
+import { getUserStatus } from '../lib/auth';
 import { toast } from 'sonner';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -36,18 +36,20 @@ const Auth: React.FC = () => {
     const [regPassword, setRegPassword] = useState('');
 
     const navigate = useNavigate();
-    const { user } = useAuth();
 
     // Redirect if already logged in and confirmed
     useEffect(() => {
-        if (user) {
-            if (!user.email_confirmed_at) {
-                navigate('/verify-email', { replace: true, state: { email: user.email } });
-            } else {
+        let isMounted = true;
+        getUserStatus().then((status) => {
+            if (!isMounted) return;
+            if (status === 'unverified') {
+                navigate('/verify-email', { replace: true });
+            } else if (status === 'verified') {
                 navigate('/dashboard', { replace: true });
             }
-        }
-    }, [user, navigate]);
+        });
+        return () => { isMounted = false; };
+    }, [navigate]);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -97,7 +99,6 @@ const Auth: React.FC = () => {
             return;
         }
 
-        // Insert user strictly into public users table manually as fallback/guarantee.
         if (authData.user) {
             const { error: insertError } = await supabase
                 .from('users')
@@ -112,7 +113,10 @@ const Auth: React.FC = () => {
             }
         }
 
-        toast.success("Berhasil mendaftar! Silakan cek email Anda.", { id: 'auth' });
+        // Just in case supabase auto-signs in which it shouldn't if email confirm is ON
+        await supabase.auth.signOut();
+
+        toast.success("Cek email kamu dan klik link verifikasi", { id: 'auth' });
         navigate('/verify-email', { state: { email: regEmail } });
     };
 

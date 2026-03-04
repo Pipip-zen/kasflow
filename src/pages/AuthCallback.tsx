@@ -42,7 +42,7 @@ const AuthCallback: React.FC = () => {
 
                     if (sessionError) throw sessionError;
 
-                    toast.success("Email berhasil diverifikasi! Selamat datang di KasFlow 🎉", {
+                    toast.success("Email berhasil diverifikasi! Selamat datang 🎉", {
                         duration: 5000,
                         id: 'email-verify-success' // Unique ID avoids stacking
                     });
@@ -51,7 +51,7 @@ const AuthCallback: React.FC = () => {
                     const { error: codeError } = await supabase.auth.exchangeCodeForSession(code);
                     if (codeError) throw codeError;
 
-                    toast.success("Email berhasil diverifikasi! Selamat datang di KasFlow 🎉", {
+                    toast.success("Email berhasil diverifikasi! Selamat datang 🎉", {
                         duration: 5000,
                         id: 'email-verify-success'
                     });
@@ -64,7 +64,7 @@ const AuthCallback: React.FC = () => {
                 }
             } catch (error: any) {
                 console.error("Auth Callback Error:", error);
-                toast.error(error.message || "Gagal memverifikasi email.", {
+                toast.error("Link verifikasi tidak valid atau sudah kadaluarsa", {
                     duration: 5000,
                     id: 'email-verify-error'
                 });

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import { getUserStatus } from '../lib/auth';
 import { toast } from 'sonner';
 import { Mail, RefreshCw, LogOut } from 'lucide-react';
 import { Button } from '../components/ui/button';
@@ -15,16 +16,18 @@ const VerifyEmail: React.FC = () => {
 
     useEffect(() => {
         const initAndValidate = async () => {
-            const { data: { user } } = await supabase.auth.getUser();
+            const status = await getUserStatus();
 
             // Bug 1: Redirect based on user state
-            if (!user) {
-                // If no user is logged in at all, redirect to auth.
-                navigate('/auth', { replace: true });
-                return;
+            if (status === 'unauthenticated') {
+                // Redirect if unauthenticated unless arriving right from register state
+                if (!location.state?.email) {
+                    navigate('/auth', { replace: true });
+                    return;
+                }
             }
 
-            if (user?.email_confirmed_at) {
+            if (status === 'verified') {
                 // If user is already verified, redirect to dashboard.
                 navigate('/dashboard', { replace: true });
                 return;
@@ -33,8 +36,11 @@ const VerifyEmail: React.FC = () => {
             // Retrieve email from navigation state or fallback to active session
             if (location.state?.email) {
                 setEmail(location.state.email);
-            } else if (user?.email) {
-                setEmail(user.email);
+            } else {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (user?.email) {
+                    setEmail(user.email);
+                }
             }
         };
 

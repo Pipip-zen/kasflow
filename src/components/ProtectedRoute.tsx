@@ -1,19 +1,27 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { getUserStatus } from '../lib/auth';
 
 export const ProtectedRoute: React.FC = () => {
-    const { user, loading } = useAuth();
+    const [status, setStatus] = useState<'unauthenticated' | 'unverified' | 'verified' | 'loading'>('loading');
 
-    if (loading) {
+    useEffect(() => {
+        let isMounted = true;
+        getUserStatus().then((s) => {
+            if (isMounted) setStatus(s);
+        });
+        return () => { isMounted = false; };
+    }, []);
+
+    if (status === 'loading') {
         return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
     }
 
-    if (!user) {
+    if (status === 'unauthenticated') {
         return <Navigate to="/auth" replace />;
     }
 
-    if (!user.email_confirmed_at) {
+    if (status === 'unverified') {
         return <Navigate to="/verify-email" replace />;
     }
 
