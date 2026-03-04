@@ -255,8 +255,8 @@ const BillDetail: React.FC = () => {
         }
 
         return (
-            <div className="overflow-x-auto w-full" style={{ WebkitOverflowScrolling: 'touch' }}>
-                <Table className="min-w-[500px]">
+            <div className="overflow-x-auto -mx-4 px-4 w-full max-w-full" style={{ WebkitOverflowScrolling: 'touch' }}>
+                <Table className="min-w-[500px] w-full">
                     <TableHeader>
                         <TableRow>
                             <TableHead className="whitespace-nowrap">Nama Anggota</TableHead>
@@ -314,7 +314,7 @@ const BillDetail: React.FC = () => {
             </Button>
 
             {/* Header Info */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-start gap-4 p-6 bg-white border rounded-xl shadow-sm">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-start gap-4 p-4 md:p-6 bg-white border rounded-xl shadow-sm w-full max-w-full overflow-hidden">
                 <div className="space-y-1">
                     <div className="flex items-center gap-3">
                         <h1 className="text-2xl font-bold tracking-tight">{bill.judul}</h1>
@@ -412,27 +412,27 @@ const BillDetail: React.FC = () => {
             </div>
 
             {/* Progress Section */}
-            <Card className="bg-gradient-to-br from-green-50 to-white border-green-100">
-                <CardContent className="p-6">
+            <Card className="bg-gradient-to-br from-green-50 to-white border-green-100 w-full max-w-full overflow-hidden">
+                <CardContent className="p-4 md:p-6">
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-4 gap-3">
-                        <div>
-                            <p className="text-sm font-medium text-green-800 mb-1">Total Kas Terkumpul</p>
+                        <div className="w-full md:w-auto overflow-hidden">
+                            <p className="text-xs md:text-sm font-medium text-green-800 mb-1 truncate">Total Kas Terkumpul</p>
                             <div className="flex items-baseline gap-2 flex-wrap">
-                                <span className="text-2xl md:text-3xl font-bold text-slate-900">{formatCurrency(totalTerkumpul)}</span>
-                                <span className="text-sm text-slate-500 font-medium">/ {formatCurrency(totalPotensi)}</span>
+                                <span className="text-xl md:text-2xl font-bold text-slate-900 truncate">{formatCurrency(totalTerkumpul)}</span>
+                                <span className="text-xs md:text-sm text-slate-500 font-medium truncate">/ {formatCurrency(totalPotensi)}</span>
                             </div>
                         </div>
-                        <div className="md:text-right">
-                            <p className="text-sm font-medium text-slate-600 mb-1">Target Anggota</p>
-                            <p className="text-lg font-bold text-slate-900">{bill.paid_count} <span className="text-sm font-normal text-muted-foreground">dari {bill.total_members} Lunas</span></p>
+                        <div className="md:text-right w-full md:w-auto overflow-hidden">
+                            <p className="text-xs md:text-sm font-medium text-slate-600 mb-1 truncate">Target Anggota</p>
+                            <p className="text-base md:text-lg font-bold text-slate-900 truncate">{bill.paid_count} <span className="text-xs md:text-sm font-normal text-muted-foreground">dari {bill.total_members} Lunas</span></p>
                         </div>
                     </div>
-                    <Progress value={bill.progress} className="h-3 bg-green-200/50" />
+                    <Progress value={bill.progress} className="h-2 md:h-3 bg-green-200/50" />
                 </CardContent>
             </Card>
 
             {/* Table Section */}
-            <Card>
+            <Card className="w-full max-w-full overflow-hidden">
                 <CardHeader>
                     <CardTitle>Rincian Pembayaran</CardTitle>
                     <CardDescription>

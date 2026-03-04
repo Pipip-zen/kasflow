@@ -99,55 +99,55 @@ const Dashboard: React.FC = () => {
                 </div>
             ) : (
                 <>
-                    <div className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full max-w-full overflow-hidden">
                         {/* Stat Cards */}
-                        <Card>
+                        <Card className="w-full max-w-full overflow-hidden">
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Total Kas Terkumpul</CardTitle>
-                                <Wallet className="h-4 w-4 text-muted-foreground" />
+                                <CardTitle className="text-sm font-medium truncate pr-2">Total Kas Terkumpul</CardTitle>
+                                <Wallet className="h-4 w-4 text-muted-foreground shrink-0" />
                             </CardHeader>
-                            <CardContent>
-                                <div className="text-xl md:text-2xl font-bold">{formatCurrency(stats.totalCash)}</div>
-                                <p className="text-xs text-muted-foreground mt-1">Dari semua pembayaran lunas</p>
+                            <CardContent className="overflow-hidden">
+                                <div className="text-xl md:text-2xl font-bold truncate">{formatCurrency(stats.totalCash)}</div>
+                                <p className="text-xs text-muted-foreground mt-1 truncate">Dari semua pembayaran lunas</p>
                             </CardContent>
                         </Card>
 
-                        <Card>
+                        <Card className="w-full max-w-full overflow-hidden">
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Tagihan Aktif</CardTitle>
-                                <FileText className="h-4 w-4 text-muted-foreground" />
+                                <CardTitle className="text-sm font-medium truncate pr-2">Tagihan Aktif</CardTitle>
+                                <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
                             </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold">{stats.totalBills}</div>
-                                <p className="text-xs text-muted-foreground mt-1">Sedang berjalan</p>
+                            <CardContent className="overflow-hidden">
+                                <div className="text-xl md:text-2xl font-bold truncate">{stats.totalBills}</div>
+                                <p className="text-xs text-muted-foreground mt-1 truncate">Sedang berjalan</p>
                             </CardContent>
                         </Card>
 
-                        <Card>
+                        <Card className="w-full max-w-full overflow-hidden">
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Total Grup</CardTitle>
-                                <Users className="h-4 w-4 text-muted-foreground" />
+                                <CardTitle className="text-sm font-medium truncate pr-2">Total Grup</CardTitle>
+                                <Users className="h-4 w-4 text-muted-foreground shrink-0" />
                             </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold">{stats.totalGroups}</div>
-                                <p className="text-xs text-muted-foreground mt-1">Grup yang Anda kelola</p>
+                            <CardContent className="overflow-hidden">
+                                <div className="text-xl md:text-2xl font-bold truncate">{stats.totalGroups}</div>
+                                <p className="text-xs text-muted-foreground mt-1 truncate">Grup yang Anda kelola</p>
                             </CardContent>
                         </Card>
 
-                        <Card>
+                        <Card className="w-full max-w-full overflow-hidden">
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Total Anggota</CardTitle>
-                                <UsersRound className="h-4 w-4 text-muted-foreground" />
+                                <CardTitle className="text-sm font-medium truncate pr-2">Total Anggota</CardTitle>
+                                <UsersRound className="h-4 w-4 text-muted-foreground shrink-0" />
                             </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold">{stats.totalMembers}</div>
-                                <p className="text-xs text-muted-foreground mt-1">Di semua grup</p>
+                            <CardContent className="overflow-hidden">
+                                <div className="text-xl md:text-2xl font-bold truncate">{stats.totalMembers}</div>
+                                <p className="text-xs text-muted-foreground mt-1 truncate">Di semua grup</p>
                             </CardContent>
                         </Card>
                     </div>
 
-                    <div className="grid flex-1 items-start gap-4">
-                        <Card>
+                    <div className="grid flex-1 items-start gap-4 w-full max-w-full overflow-hidden">
+                        <Card className="w-full max-w-full overflow-hidden">
                             <CardHeader>
                                 <CardTitle>Tagihan Terbaru</CardTitle>
                             </CardHeader>

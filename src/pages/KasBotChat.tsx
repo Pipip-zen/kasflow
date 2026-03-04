@@ -317,7 +317,7 @@ export default function KasBotChat() {
                     </Button>
                 </div>
                 <p className="text-center text-[10px] text-gray-400 mt-2">
-                    Enter untuk kirim • Shift+Enter baris baru • AI dapat membuat kesalahan
+                    Enter untuk kirim • Shift + Enter baris baru • AI dapat membuat kesalahan
                 </p>
             </div>
         </div>
