@@ -1,73 +1,91 @@
-# React + TypeScript + Vite
+# KasFlow 💰
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Aplikasi manajemen kas kolektif untuk bendahara organisasi, komunitas, dan kelas — dilengkapi dengan **AI Assistant (KasBot)** berbasis Google Gemini.
 
-Currently, two official plugins are available:
+## 🚀 Fitur
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Dashboard** — Ringkasan total kas, tagihan aktif, dan anggota
+- **Manajemen Grup** — Buat dan kelola grup anggota
+- **Tagihan** — Buat tagihan, aktifkan, kirim email otomatis, dan lacak pembayaran
+- **KasBot AI** — AI Assistant yang bisa menjawab pertanyaan seputar kas secara natural, menganalisis pola pembayaran, kirim reminder, dan buat tagihan langsung dari chat
 
-## React Compiler
+---
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## ⚙️ Setup Project
 
-## Expanding the ESLint configuration
+### 1. Install dependencies
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### 2. Konfigurasi Environment Variables
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+Buat file `.env` di root project dan isi variabel berikut:
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```env
+# Supabase
+VITE_SUPABASE_URL=          # URL project Supabase kamu
+VITE_SUPABASE_ANON_KEY=     # Anon key Supabase
+VITE_SUPABASE_SERVICE_ROLE_KEY=  # Service role key (untuk fungsi admin)
+
+# Mayar (payment gateway)
+VITE_MAYAR_API_KEY=         # API Key dari dashboard Mayar.id
+VITE_MAYAR_WEBHOOK_SECRET=  # Webhook secret dari Mayar.id
+
+# App
+VITE_APP_URL=               # URL aplikasi (contoh: https://kasflow-rho.vercel.app/)
+
+# Google Gemini AI — untuk fitur KasBot AI Assistant
+VITE_GEMINI_API_KEY=        # Lihat cara mendapatkan di bawah
 ```
+
+---
+
+### 🤖 Cara Mendapatkan Gemini API Key (Gratis)
+
+**KasBot AI** membutuhkan API Key dari Google AI Studio.
+
+1. Buka **[aistudio.google.com](https://aistudio.google.com)**
+2. Login dengan akun Google
+3. Klik **"Get API Key"** → **"Create API key"**
+4. Pilih project Google Cloud (atau buat baru)
+5. Copy API key yang dihasilkan
+6. Paste ke `.env`:
+   ```
+   VITE_GEMINI_API_KEY=AIza...kunci_kamu...
+   ```
+
+**Free Tier Gemini API:**
+| Limit | Jumlah |
+|-------|--------|
+| Request per menit | 15 RPM |
+| Request per hari | 1.500 RPD |
+| Token per menit | 1.000.000 TPM |
+
+> Model yang digunakan: `gemini-1.5-flash` (cepat dan gratis untuk development)
+
+---
+
+### 3. Jalankan Development Server
+
+```bash
+npm run dev
+```
+
+---
+
+## 🌐 Deploy ke Vercel
+
+Saat deploy ke Vercel, tambahkan **semua variabel di atas** ke **Vercel Dashboard → Project Settings → Environment Variables**, termasuk `VITE_GEMINI_API_KEY`.
+
+---
+
+## 🛠️ Tech Stack
+
+- **Frontend:** React + TypeScript + Vite
+- **UI:** Shadcn/ui + Tailwind CSS
+- **Backend / DB:** Supabase (PostgreSQL + Auth)
+- **Payment:** Mayar.id
+- **Email:** Resend
+- **AI:** Google Gemini 1.5 Flash (Function Calling)

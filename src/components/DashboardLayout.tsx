@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LayoutDashboard, Users, LogOut, Menu, FileText, Bot } from 'lucide-react';
+import { LayoutDashboard, Users, LogOut, Menu, FileText, MessageSquare } from 'lucide-react';
 import { Button } from './ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from './ui/sheet';
 
@@ -16,10 +16,10 @@ export const DashboardLayout: React.FC = () => {
     };
 
     const navLinks = [
-        { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-        { to: '/groups', label: 'Grup', icon: Users },
-        { to: '/bills', label: 'Tagihan', icon: FileText },
-        { to: '/chat', label: 'KasBot AI', icon: Bot },
+        { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, badge: null },
+        { to: '/groups', label: 'Grup', icon: Users, badge: null },
+        { to: '/bills', label: 'Tagihan', icon: FileText, badge: null },
+        { to: '/chat', label: 'AI Assistant', icon: MessageSquare, badge: 'NEW' },
     ];
 
     const SidebarContent = () => (
@@ -47,7 +47,12 @@ export const DashboardLayout: React.FC = () => {
                             }
                         >
                             <link.icon className="h-5 w-5" />
-                            {link.label}
+                            <span className="flex-1">{link.label}</span>
+                            {link.badge && (
+                                <span className="px-1.5 py-0.5 text-[9px] font-bold bg-green-600 text-white rounded-md tracking-wider">
+                                    {link.badge}
+                                </span>
+                            )}
                         </NavLink>
                     ))}
                 </nav>

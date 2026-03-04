@@ -49,7 +49,12 @@ Aturan penting:
 - Gunakan emoji secukupnya agar terasa friendly
 `;
 
-export async function sendMessage(message: string, history: ChatHistory[], userId: string): Promise<string> {
+export async function sendMessage(
+  message: string,
+  history: ChatHistory[],
+  userId: string,
+  onFunctionCall?: (fnName: string) => void
+): Promise<string> {
   const contextData = await getBendaharaContext(userId);
 
   const formattedPrompt = SYSTEM_PROMPT.replace(
@@ -75,6 +80,9 @@ export async function sendMessage(message: string, history: ChatHistory[], userI
     const functionCall = functionCalls[0];
     const functionName = functionCall.name;
     const functionArgs = functionCall.args;
+
+    // Notify UI of which function is being called
+    onFunctionCall?.(functionName);
 
     const apiResponse = await executeFunction(functionName, functionArgs, userId);
 
