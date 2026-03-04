@@ -75,10 +75,10 @@ const BillDetail: React.FC = () => {
 
     const handleActivateTagihan = async () => {
         if (!bill) return;
-        if (!window.confirm("Aktifkan tagihan ini? Sistem akan mengirimkan pesan WhatsApp ke semua anggota secara otomatis.")) return;
+        if (!window.confirm("Aktifkan tagihan ini? Sistem akan mengirimkan pesan Email ke semua anggota secara otomatis.")) return;
 
         setIsUpdatingStatus(true);
-        toast.loading("Memproses dan mengirimkan pesan WA...", { id: 'activate-bill' });
+        toast.loading("Memproses dan mengirimkan pesan Email...", { id: 'activate-bill' });
 
         try {
             const result = await api.activateBill(bill.id);
@@ -88,7 +88,7 @@ const BillDetail: React.FC = () => {
             const updatedPayments = await api.getBillPayments(bill.id);
             setPayments(updatedPayments);
 
-            toast.success(`Tagihan aktif! Terkirim: ${result.total_sent} pesan WA.`, {
+            toast.success(`Tagihan aktif! Terkirim: ${result.total_sent} pesan Email.`, {
                 id: 'activate-bill',
                 description: result.failed.length > 0 ? `Gagal mengirim ke: ${result.failed.join(', ')}` : undefined
             });
@@ -102,17 +102,17 @@ const BillDetail: React.FC = () => {
 
     const handleRemindTagihan = async () => {
         if (!bill) return;
-        if (!window.confirm("Kirim ulang pengingat WA ke anggota yang BELUM terbayar?")) return;
+        if (!window.confirm("Kirim ulang pengingat Email ke anggota yang BELUM terbayar?")) return;
 
         setIsUpdatingStatus(true);
-        toast.loading("Mengirimkan pengingat WhatsApp...", { id: 'remind-bill' });
+        toast.loading("Mengirimkan pengingat Email...", { id: 'remind-bill' });
 
         try {
             const result = await api.remindBill(bill.id);
-            toast.success(`Pengingat WA berhasil terkirim ke ${result.total_sent} anggota.`, { id: 'remind-bill' });
+            toast.success(`Pengingat Email berhasil terkirim ke ${result.total_sent} anggota.`, { id: 'remind-bill' });
         } catch (error) {
             console.error("Failed to send reminder", error);
-            toast.error("Gagal mengirimkan pengingat WhatsApp.", { id: 'remind-bill' });
+            toast.error("Gagal mengirimkan pengingat Email.", { id: 'remind-bill' });
         } finally {
             setIsUpdatingStatus(false);
         }
@@ -153,7 +153,7 @@ const BillDetail: React.FC = () => {
                 <TableHeader>
                     <TableRow>
                         <TableHead>Nama Anggota</TableHead>
-                        <TableHead>Nomor WA</TableHead>
+                        <TableHead>Alamat Email</TableHead>
                         <TableHead>Tanggal Bayar</TableHead>
                         <TableHead className="text-right">Status</TableHead>
                     </TableRow>
@@ -162,7 +162,7 @@ const BillDetail: React.FC = () => {
                     {filtered.map(payment => (
                         <TableRow key={payment.id}>
                             <TableCell className="font-medium">{payment.members.nama}</TableCell>
-                            <TableCell>{payment.members.nomor_wa || '-'}</TableCell>
+                            <TableCell>{payment.members.email || '-'}</TableCell>
                             <TableCell className="text-muted-foreground text-sm">
                                 {payment.paid_at ? new Date(payment.paid_at).toLocaleDateString('id-ID') : '-'}
                             </TableCell>
@@ -225,13 +225,13 @@ const BillDetail: React.FC = () => {
                 <div className="hidden md:flex gap-2">
                     {bill.status === 'draft' && (
                         <Button onClick={handleActivateTagihan} disabled={isUpdatingStatus} className="bg-blue-600 hover:bg-blue-700">
-                            <PlayCircle className="w-4 h-4 mr-2" /> Aktifkan & Kirim WA
+                            <PlayCircle className="w-4 h-4 mr-2" /> Aktifkan & Kirim Email
                         </Button>
                     )}
 
                     {(bill.status === 'active' || bill.status === 'draft') && (
                         <Button variant="outline" className="border-green-600 text-green-700 hover:bg-green-50" onClick={handleRemindTagihan} disabled={isUpdatingStatus}>
-                            <MessageCircle className="w-4 h-4 mr-2" /> Kirim Pengingat WA
+                            <MessageCircle className="w-4 h-4 mr-2" /> Kirim Pengingat Email
                         </Button>
                     )}
 
@@ -298,13 +298,13 @@ const BillDetail: React.FC = () => {
             <div className="md:hidden fixed bottom-0 left-0 right-0 p-4 bg-white border-t flex flex-col gap-2 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-10">
                 {bill.status === 'draft' && (
                     <Button onClick={handleActivateTagihan} disabled={isUpdatingStatus} className="bg-blue-600 hover:bg-blue-700 w-full">
-                        <PlayCircle className="w-4 h-4 mr-2" /> Aktifkan & Kirim WA
+                        <PlayCircle className="w-4 h-4 mr-2" /> Aktifkan & Kirim Email
                     </Button>
                 )}
 
                 {(bill.status === 'active' || bill.status === 'draft') && (
                     <Button variant="outline" className="w-full border-green-600 text-green-700 hover:bg-green-50" onClick={handleRemindTagihan} disabled={isUpdatingStatus}>
-                        <MessageCircle className="w-4 h-4 mr-2" /> Kirim Pengingat WA
+                        <MessageCircle className="w-4 h-4 mr-2" /> Kirim Pengingat Email
                     </Button>
                 )}
 

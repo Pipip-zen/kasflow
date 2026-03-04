@@ -447,7 +447,7 @@ export const api = {
 
         const { data: payments, error: payError } = await supabase
             .from('payments')
-            .select('*, members(nama, nomor_wa)')
+            .select('*, members(nama, email, nomor_wa)')
             .eq('bill_id', billId)
             .eq('status', 'pending');
 

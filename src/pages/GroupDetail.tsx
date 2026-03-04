@@ -145,7 +145,7 @@ const GroupDetail: React.FC = () => {
                                     <DialogHeader>
                                         <DialogTitle>Tambah Anggota Baru</DialogTitle>
                                         <DialogDescription>
-                                            Tambahkan nama dan nomor WhatsApp anggota ke dalam grup ini.
+                                            Tambahkan nama dan Email anggota ke dalam grup ini.
                                         </DialogDescription>
                                     </DialogHeader>
                                     <div className="grid gap-4 py-4">
@@ -207,7 +207,7 @@ const GroupDetail: React.FC = () => {
                                 <TableHeader>
                                     <TableRow>
                                         <TableHead>Nama</TableHead>
-                                        <TableHead>Nomor WhatsApp</TableHead>
+                                        <TableHead>Alamat Email</TableHead>
                                         <TableHead className="w-[100px] text-right">Aksi</TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -215,7 +215,7 @@ const GroupDetail: React.FC = () => {
                                     {members.map((member) => (
                                         <TableRow key={member.id}>
                                             <TableCell className="font-medium">{member.nama}</TableCell>
-                                            <TableCell>{member.nomor_wa || <span className="text-slate-400 italic">Belum diisi</span>}</TableCell>
+                                            <TableCell>{member.email || <span className="text-slate-400 italic">Belum diisi</span>}</TableCell>
                                             <TableCell className="text-right">
                                                 <Button
                                                     variant="ghost"

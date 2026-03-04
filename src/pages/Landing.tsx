@@ -33,7 +33,7 @@ const Landing: React.FC = () => {
                         Tagih Kas Tanpa Rasa Nggak Enak
                     </h1>
                     <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mb-10 leading-relaxed">
-                        Aplikasi manajemen kas kolektif pertama di mana <span className="font-semibold text-foreground">hanya bendahara yang butuh akun</span>. Kirim tagihan otomatis via WhatsApp.
+                        Aplikasi manajemen kas kolektif pertama di mana <span className="font-semibold text-foreground">hanya bendahara yang butuh akun</span>. Kirim tagihan otomatis via Email.
                     </p>
                     <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto px-4">
                         <button
@@ -78,7 +78,7 @@ const Landing: React.FC = () => {
 
                         {[
                             { icon: Receipt, title: 'Buat Tagihan', desc: 'Bendahara input nominal tagihan Kas bulanan atau mingguan.' },
-                            { icon: MessageSquare, title: 'Kirim WA Otomatis', desc: 'KasFlow kirim link tagihan ke WhatsApp semua anggota.' },
+                            { icon: MessageSquare, title: 'Kirim Email Otomatis', desc: 'KasFlow kirim link tagihan ke Email semua anggota.' },
                             { icon: CheckCircle2, title: 'Pantau Pembayaran', desc: 'Anggota bayar langsung tanpa akun, saldo terupdate.' }
                         ].map((step, i) => (
                             <div key={i} className="flex flex-col items-center text-center relative bg-background">
