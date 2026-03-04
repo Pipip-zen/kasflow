@@ -12,62 +12,59 @@ serve(async (req) => {
     }
 
     try {
-        const token = req.headers.get("Authorization");
-        const webhookSecret = Deno.env.get("MAYAR_WEBHOOK_SECRET");
+        const corsHeaders = {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+            "Content-Type": "application/json"
+        };
 
-        // Verifikasi token dari header Authorization
-        if (token !== webhookSecret) {
-            console.warn("Unauthorized webhook attempt");
-            return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
+        const { event, data } = await req.json();
+
+        console.log("Event:", event);
+        if (data) {
+            console.log("Payment ID:", data.id);
+            console.log("Status:", data.status);
         }
 
-        const body = await req.json();
-        const { event, data } = body;
-
-        // Jika event berupa testing dari dashboard Mayar
         if (event === "testing") {
             return new Response(JSON.stringify({ received: true, message: "Testing event acknowledged" }), {
                 status: 200,
-                headers: { "Content-Type": "application/json" }
+                headers: corsHeaders
             });
         }
 
-        const mayarTransactionId = data?.id;
-        const status = data?.status;
+        if (event === "payment.received" && data && data.status === "SUCCESS") {
+            const supabase = createClient(
+                Deno.env.get("SUPABASE_URL")!,
+                Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+            );
 
-        // Jika event payment success
-        if (status === "SUCCESS" && mayarTransactionId) {
-            // Initialize Supabase Client using Service Role
-            const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
-            const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+            const mayarTransactionId = data.id;
 
-            const supabase = createClient(supabaseUrl, supabaseKey);
-
-            // Update the KasFlow payment record that matches the Mayar transaction ID
-            const { error } = await supabase
+            const { error, count } = await supabase
                 .from('payments')
-                .update({
-                    status: 'paid',
-                    paid_at: new Date().toISOString()
-                })
+                .update({ status: 'paid', paid_at: new Date().toISOString() })
                 .eq('mayar_payment_id', mayarTransactionId);
 
             if (error) {
-                console.error("Failed adjusting database:", error);
+                console.error("Failed executing database update:", error);
             } else {
-                console.log(`Successfully settled payment for Mayar ID: ${mayarTransactionId}`);
+                console.log(`Payment updated. Status: paid. ID: ${mayarTransactionId}`);
             }
         }
 
-        // 5. Selalu return 200 OK di akhir meskipun payment tidak ditemukan
-        // supaya Mayar tidak me-retry webhook terus-menerus.
         return new Response(JSON.stringify({ received: true }), {
             status: 200,
-            headers: { "Content-Type": "application/json" }
+            headers: corsHeaders
         });
 
     } catch (error) {
-        console.error("Webhook processing error:", error);
-        return new Response(JSON.stringify({ error: 'Internal webhook error' }), { status: 500 });
+        console.error("Webhook processing error:", error.message);
+        const corsHeaders = {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+            "Content-Type": "application/json"
+        };
+        return new Response(JSON.stringify({ error: 'Internal webhook error' }), { status: 500, headers: corsHeaders });
     }
 })
