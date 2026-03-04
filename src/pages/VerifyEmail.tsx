@@ -14,19 +14,32 @@ const VerifyEmail: React.FC = () => {
     const [isResending, setIsResending] = useState(false);
 
     useEffect(() => {
-        // Retrieve email from navigation state or fallback to active session
-        const initEmail = async () => {
+        const initAndValidate = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+
+            // Bug 1: Redirect based on user state
+            if (!user) {
+                // If no user is logged in at all, redirect to auth.
+                navigate('/auth', { replace: true });
+                return;
+            }
+
+            if (user?.email_confirmed_at) {
+                // If user is already verified, redirect to dashboard.
+                navigate('/dashboard', { replace: true });
+                return;
+            }
+
+            // Retrieve email from navigation state or fallback to active session
             if (location.state?.email) {
                 setEmail(location.state.email);
-            } else {
-                const { data: { user } } = await supabase.auth.getUser();
-                if (user?.email) {
-                    setEmail(user.email);
-                }
+            } else if (user?.email) {
+                setEmail(user.email);
             }
         };
-        initEmail();
-    }, [location.state]);
+
+        initAndValidate();
+    }, [location.state, navigate]);
 
     // Polling interval to check if the user finally clicked the email confirmation link 
     // from another device/browser.

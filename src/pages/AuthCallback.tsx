@@ -8,49 +8,74 @@ const AuthCallback: React.FC = () => {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
 
+    const hasProcessed = React.useRef(false);
+
     useEffect(() => {
+        if (hasProcessed.current) return;
+        hasProcessed.current = true;
+
         const handleEmailConfirmation = async () => {
             try {
-                // If it's a standard email confirmation flow, Supabase will provide a code.
-                const code = searchParams.get('code');
+                // Parse both URL formats
+                const hashParams = new URLSearchParams(window.location.hash.slice(1));
+                const queryParams = new URLSearchParams(window.location.search);
 
-                if (code) {
-                    const { error } = await supabase.auth.exchangeCodeForSession(code);
-                    if (error) throw error;
+                const accessToken = hashParams.get('access_token');
+                const refreshToken = hashParams.get('refresh_token');
+                const type = hashParams.get('type');
+                const code = queryParams.get('code');
+                const error = hashParams.get('error') || queryParams.get('error');
+                const errorDescription = hashParams.get('error_description') || queryParams.get('error_description');
+
+                // Bug 2: Handle URL error immediately and skip processing
+                if (error) {
+                    throw new Error(errorDescription || "Link verifikasi tidak valid atau sudah kadaluarsa");
+                }
+
+                // Process token exchange
+                if (type === 'signup' && accessToken && refreshToken) {
+                    // Refresh token flow
+                    const { error: sessionError } = await supabase.auth.setSession({
+                        access_token: accessToken,
+                        refresh_token: refreshToken
+                    });
+
+                    if (sessionError) throw sessionError;
+
+                    toast.success("Email berhasil diverifikasi! Selamat datang di KasFlow 🎉", {
+                        duration: 5000,
+                        id: 'email-verify-success' // Unique ID avoids stacking
+                    });
+                } else if (code) {
+                    // PKCE flow
+                    const { error: codeError } = await supabase.auth.exchangeCodeForSession(code);
+                    if (codeError) throw codeError;
 
                     toast.success("Email berhasil diverifikasi! Selamat datang di KasFlow 🎉", {
                         duration: 5000,
                         id: 'email-verify-success'
                     });
-                    navigate('/dashboard', { replace: true });
                 } else {
-                    // It might be a token hash flow (older Supabase standard) mapped into URL hash.
-                    const hashParams = new URLSearchParams(window.location.hash.slice(1));
-                    const accessToken = hashParams.get('access_token');
-
-                    if (accessToken) {
-                        toast.success("Email berhasil diverifikasi! Selamat datang di KasFlow 🎉", {
-                            duration: 5000,
-                            id: 'email-verify-success'
-                        });
-                        navigate('/dashboard', { replace: true });
-                    } else {
-                        // Fallback handling: Try checking session as auth state might have just updated
-                        const { data: { session } } = await supabase.auth.getSession();
-                        if (session?.user?.email_confirmed_at) {
-                            navigate('/dashboard', { replace: true });
-                        } else {
-                            throw new Error("Link verifikasi tidak valid atau sudah kadaluarsa");
-                        }
+                    // Fallback to checking existing active session status (e.g. from Auto-verification)
+                    const { data: { session } } = await supabase.auth.getSession();
+                    if (!session?.user?.email_confirmed_at) {
+                        throw new Error("Sesi verifikasi tidak ditemukan. Silakan login kembali.");
                     }
                 }
             } catch (error: any) {
                 console.error("Auth Callback Error:", error);
-                toast.error(error.message || "Link verifikasi tidak valid atau sudah kadaluarsa", {
+                toast.error(error.message || "Gagal memverifikasi email.", {
                     duration: 5000,
                     id: 'email-verify-error'
                 });
-                navigate('/auth', { replace: true });
+            } finally {
+                // Bug 3: Final redirect logic based on session state 
+                const { data: { session } } = await supabase.auth.getSession();
+                if (session) {
+                    navigate('/dashboard', { replace: true });
+                } else {
+                    navigate('/auth', { replace: true });
+                }
             }
         };
 
