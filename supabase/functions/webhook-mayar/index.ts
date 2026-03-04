@@ -38,7 +38,7 @@ Deno.serve(async (req) => {
                 Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
             );
 
-            const mayarTransactionId = data.id;
+            const mayarTransactionId = data.productId;
 
             const { error, count } = await supabase
                 .from('payments')
