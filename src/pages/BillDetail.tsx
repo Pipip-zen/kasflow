@@ -255,8 +255,14 @@ const BillDetail: React.FC = () => {
         }
 
         return (
-            <div className="w-full overflow-x-auto overflow-y-hidden [-webkit-overflow-scrolling:touch]">
-                <Table className="min-w-[500px]">
+            <div
+                className="w-full"
+                style={{
+                    overflowX: 'auto',
+                    WebkitOverflowScrolling: 'touch'
+                }}
+            >
+                <Table style={{ minWidth: '500px' }} className="w-full">
                     <TableHeader>
                         <TableRow>
                             <TableHead className="whitespace-nowrap">Nama Anggota</TableHead>
@@ -314,8 +320,8 @@ const BillDetail: React.FC = () => {
             </Button>
 
             {/* Header Info */}
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-4 p-4 md:p-6 bg-white border rounded-xl shadow-sm w-full overflow-hidden items-start">
-                <div className="space-y-1 min-w-0 md:col-span-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 md:p-6 bg-white border rounded-xl shadow-sm w-full overflow-hidden items-start">
+                <div className="space-y-1 min-w-0">
                     <div className="flex items-center gap-3">
                         <h1 className="text-xl sm:text-2xl font-bold truncate">{bill.judul}</h1>
                         <Badge variant={getBadgeVariant(bill.status) as any} className={bill.status === 'active' ? 'bg-blue-100 text-blue-800 shrink-0' : 'shrink-0'}>
@@ -330,7 +336,7 @@ const BillDetail: React.FC = () => {
                 </div>
 
                 {/* Desktop Action Buttons */}
-                <div className="hidden md:flex gap-2 md:col-span-4 justify-end flex-wrap">
+                <div className="hidden sm:flex gap-2 justify-end items-start w-full sm:col-start-2 place-self-end">
                     {bill.status === 'draft' && (
                         <>
                             <Dialog open={openEdit} onOpenChange={setOpenEdit}>
@@ -412,9 +418,9 @@ const BillDetail: React.FC = () => {
             </div>
 
             {/* Progress Section */}
-            <Card className="bg-gradient-to-br from-green-50 to-white border-green-100">
+            <Card className="bg-gradient-to-br from-green-50 to-white border-green-100 w-full overflow-hidden">
                 <CardContent className="p-4 sm:p-6">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end mb-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-end mb-4 w-full">
                         <div className="min-w-0">
                             <p className="text-xs sm:text-sm text-gray-500 mb-1 truncate">Total Kas Terkumpul</p>
                             <div className="flex items-baseline gap-2 flex-wrap">
@@ -432,7 +438,7 @@ const BillDetail: React.FC = () => {
             </Card>
 
             {/* Table Section */}
-            <Card>
+            <Card className="w-full overflow-hidden grid grid-cols-1 gap-4">
                 <CardHeader>
                     <CardTitle>Rincian Pembayaran</CardTitle>
                     <CardDescription className="line-clamp-2">
