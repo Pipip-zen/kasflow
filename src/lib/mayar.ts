@@ -19,6 +19,19 @@ export const createPaymentLink = async (data: MayarPaymentData): Promise<{ payme
     }
 
     try {
+        let expiredDate = new Date();
+        if (data.deadline) {
+            const deadlineDate = new Date(data.deadline);
+            deadlineDate.setHours(23, 59, 59, 0); // End of the day
+            if (deadlineDate > expiredDate) {
+                expiredDate = deadlineDate;
+            } else {
+                expiredDate.setDate(expiredDate.getDate() + 7); // 7 days from now if deadline is passed
+            }
+        } else {
+            expiredDate.setDate(expiredDate.getDate() + 7); // 7 days from now if no deadline
+        }
+
         const payload = {
             name: data.customer_name,
             email: data.customer_email || "no-reply@kasflow.local",
@@ -26,7 +39,7 @@ export const createPaymentLink = async (data: MayarPaymentData): Promise<{ payme
             mobile: data.customer_mobile && data.customer_mobile.length >= 10 ? data.customer_mobile : "08000000000",
             redirectUrl: `${appUrl}/pay/${data.payment_token}`,
             description: `Tagihan ${data.title} - ${data.group_name}`,
-            expiredAt: new Date(data.deadline).toISOString()
+            expiredAt: expiredDate.toISOString()
         };
 
         const endpoint = 'https://api.mayar.club/hl/v1/payment/create';
