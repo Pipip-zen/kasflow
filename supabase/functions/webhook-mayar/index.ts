@@ -1,7 +1,8 @@
+// @ts-nocheck
 // @ts-ignore
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: Request) => {
     // Only accept POST requests
     if (req.method !== 'POST') {
         return new Response(JSON.stringify({ error: 'Method not allowed' }), {
@@ -57,7 +58,8 @@ Deno.serve(async (req) => {
             headers: corsHeaders
         });
 
-    } catch (error) {
+    } catch (err) {
+        const error = err as Error;
         console.error("Webhook processing error:", error.message);
         const corsHeaders = {
             "Access-Control-Allow-Origin": "*",
